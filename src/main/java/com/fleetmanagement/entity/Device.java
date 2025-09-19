@@ -77,11 +77,11 @@ public class Device {
     @Column(name = "last_heartbeat")
     private LocalDateTime lastHeartbeat;
     
-    @Column(name = "expiry_at")  // Added expiry field
+    @Column(name = "expiry_at")
     private LocalDateTime expiryAt;
     
     @CreationTimestamp
-    @Column(name = "installed_at", nullable = false, updatable = false)  // Changed from created_at to installed_at
+    @Column(name = "installed_at", nullable = false, updatable = false)
     private LocalDateTime installedAt;
     
     @UpdateTimestamp

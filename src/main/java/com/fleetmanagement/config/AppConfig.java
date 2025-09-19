@@ -1,11 +1,17 @@
 package com.fleetmanagement.config;
 
+import java.util.HashSet;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.modelmapper.Converter;
+
+import java.util.Set;
+
 
 /**
  * Application Configuration
@@ -19,16 +25,23 @@ public class AppConfig {
      * Configure ModelMapper for DTO conversions
      * Optimized for performance with strict matching strategy
      */
-    @Bean
+        @Bean
     public ModelMapper modelMapper() {
         ModelMapper mapper = new ModelMapper();
-        
-        // Configure for strict matching to avoid ambiguous mappings
+
         mapper.getConfiguration()
             .setMatchingStrategy(MatchingStrategies.STRICT)
             .setFieldMatchingEnabled(true)
             .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
-        
+
+        // ✅ Converter for Hibernate PersistentSet -> HashSet
+        Converter<Set<?>, Set<?>> setConverter = ctx -> {
+            if (ctx.getSource() == null) return null;
+            return new HashSet<>(ctx.getSource());
+        };
+
+        mapper.addConverter(setConverter);
+
         return mapper;
     }
     

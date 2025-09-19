@@ -33,7 +33,7 @@ public class UserResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    private Set<RoleResponse> roles;
+    private Set<RoleResponseDto> roles;
     private Set<DeviceResponse> devices;
     private Set<VehicleResponse> vehicles;
 }

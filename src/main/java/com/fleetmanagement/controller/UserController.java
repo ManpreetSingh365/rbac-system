@@ -1,6 +1,7 @@
 package com.fleetmanagement.controller;
 
 import com.fleetmanagement.dto.request.CreateUserRequest;
+import com.fleetmanagement.dto.response.UserLoginResponse;
 import com.fleetmanagement.dto.response.UserResponse;
 import com.fleetmanagement.service.UserService;
 // import io.swagger.v3.oas.annotations.Operation;
@@ -54,11 +55,11 @@ public class UserController {
     }
 
     @GetMapping
-    // @Operation(summary = "List users", description = "Get paginated list of users with optional tenant filter")
     public ResponseEntity<Page<UserResponse>> listUsers(
             @RequestParam(required = false) UUID tenantId,
-            @AuthenticationPrincipal UUID currentUserId,
+            @AuthenticationPrincipal UserLoginResponse currentUser,
             Pageable pageable) {
+        UUID currentUserId = currentUser.getId(); // Add getId() in CustomUserDetails
         log.info("API call: ListUsers tenant:{} by {}", tenantId, currentUserId);
         Page<UserResponse> page = userService.getAllUsers(tenantId, currentUserId, pageable);
         return ResponseEntity.ok(page);

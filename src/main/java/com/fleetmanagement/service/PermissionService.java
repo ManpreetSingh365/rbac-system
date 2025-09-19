@@ -5,6 +5,8 @@ import com.fleetmanagement.entity.Role;
 import com.fleetmanagement.entity.User;
 import com.fleetmanagement.repository.PermissionRepository;
 import com.fleetmanagement.repository.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -341,5 +343,12 @@ public class PermissionService {
         
         return manager.getTenantId() != null && 
                manager.getTenantId().equals(target.getTenantId());
+    }
+    public Set<Permission> findAllByIds(Set<UUID> ids) {
+        Set<Permission> permissions = permissionRepository.findAllByIdIn(ids);
+        if (permissions.size() != ids.size()) {
+            throw new EntityNotFoundException("One or more permissions not found");
+        }
+        return permissions;
     }
 }

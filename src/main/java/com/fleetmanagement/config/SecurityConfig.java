@@ -49,12 +49,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/devices/register/sms").permitAll() // SMS device registration
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/favicon.ico").permitAll()
+                .requestMatchers("/api/v1/roles/**").permitAll()
+
                 
                 // Protected endpoints - require authentication
                 .requestMatchers("/api/v1/admin/**").hasAuthority("SUPER_ADMIN")
                 .requestMatchers("/api/v1/users/**").hasAnyAuthority("SUPER_ADMIN", "USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE")
-                .requestMatchers("/api/v1/roles/**").hasAnyAuthority("SUPER_ADMIN", "ROLE_CREATE", "ROLE_READ", "ROLE_UPDATE", "ROLE_DELETE")
+                // .requestMatchers("/api/v1/roles/**").hasAnyAuthority("SUPER_ADMIN", "ROLE_CREATE", "ROLE_READ", "ROLE_UPDATE", "ROLE_DELETE")
                 .requestMatchers("/api/v1/devices/**").hasAnyAuthority("SUPER_ADMIN", "DEVICE_READ", "DEVICE_REGISTER", "DEVICE_ASSIGN")
                 .requestMatchers("/api/v1/vehicles/**").hasAnyAuthority("SUPER_ADMIN", "VEHICLE_READ", "VEHICLE_CREATE", "VEHICLE_UPDATE")
                 
@@ -79,4 +81,6 @@ public class SecurityConfig {
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+
+
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * JWT Authentication Filter
@@ -38,26 +39,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = extractJwtFromRequest(request);
             
             if (jwt != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = jwtService.extractUsername(jwt);
+                UUID userId = jwtService.extractUserId(jwt); // sub = UUID
                 
-                if (username != null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (userId != null) {        
+                    UserDetails userDetails = userDetailsService.loadUserById(userId);
                     
-                    if (jwtService.isTokenValid(jwt, userDetails)) {
-                        UsernamePasswordAuthenticationToken authToken = 
+                    if (jwtService.isTokenValid(jwt, userDetails, userId)) {
+                        UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                userDetails, 
-                                null, 
+                                userDetails,
+                                null,
                                 userDetails.getAuthorities()
                             );
                         
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
-                        
-                        log.debug("Successfully authenticated user: {}", username);
+
+                        log.debug("✅ Successfully authenticated user: {}", userId);
+                    } else {
+                        log.warn("❌ Invalid JWT for user: {}", userId);
                     }
                 }
             }
+
+
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());
         }

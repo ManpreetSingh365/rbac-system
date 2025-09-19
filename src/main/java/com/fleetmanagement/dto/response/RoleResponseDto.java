@@ -1,0 +1,25 @@
+package com.fleetmanagement.dto.response;
+
+import com.fleetmanagement.entity.Role;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * DTO for role response
+ */
+@Data
+public class RoleResponseDto {
+
+    private UUID id;
+    private String name;
+    private String description;
+    private Boolean active;
+    private UUID tenantId;
+    private Role.ScopeType scopeType;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Set<UUID> permissionIds;
+}

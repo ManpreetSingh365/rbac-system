@@ -70,4 +70,6 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
      * Find all active permissions (for role assignment)
      */
     List<Permission> findByActiveTrueOrderByCategory();
+
+    Set<Permission> findAllByIdIn(Set<UUID> ids);
 }

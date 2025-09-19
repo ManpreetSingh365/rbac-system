@@ -98,4 +98,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE (u.firstName LIKE %:name% OR u.lastName LIKE %:name%) AND u.active = true")
     Page<User> findByNameContaining(@Param("name") String name, Pageable pageable);
+
+    Optional<User> findByIdAndActiveTrue(UUID id);
 }

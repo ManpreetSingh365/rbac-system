@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
  * This ensures seamless deployment in any environment without manual intervention.
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 @Order(1) // Execute before DataInitializer
 public class DatabaseInitializer implements CommandLineRunner {

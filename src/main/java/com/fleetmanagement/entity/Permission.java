@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +22,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -36,10 +39,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true) 
 public class Permission {
     
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+     @EqualsAndHashCode.Include
     @Column(name = "id")
     private UUID id;
     
@@ -69,6 +74,7 @@ public class Permission {
     private LocalDateTime createdAt;
     
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+    @JsonBackReference
     private Set<Role> roles;
     
     public enum PermissionCategory {
