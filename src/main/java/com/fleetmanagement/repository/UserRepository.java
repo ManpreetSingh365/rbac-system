@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -100,4 +101,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByNameContaining(@Param("name") String name, Pageable pageable);
 
     Optional<User> findByIdAndActiveTrue(UUID id);
+
+    Set<User> findAllByIdIn(Set<UUID> userIds);
 }

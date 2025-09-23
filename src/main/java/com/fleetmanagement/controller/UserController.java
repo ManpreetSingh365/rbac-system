@@ -1,6 +1,7 @@
 package com.fleetmanagement.controller;
 
 import com.fleetmanagement.dto.request.CreateUserRequest;
+import com.fleetmanagement.dto.request.UpdateUserRequest;
 import com.fleetmanagement.dto.response.UserLoginResponse;
 import com.fleetmanagement.dto.response.UserResponse;
 import com.fleetmanagement.service.UserService;
@@ -38,7 +39,9 @@ public class UserController {
     // @Operation(summary = "Create new user", description = "Create user with roles and assignments")
     public ResponseEntity<UserResponse> createUser(
             @Valid @RequestBody CreateUserRequest request,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+
+        UUID currentUserId = currentUser.getId();
         log.info("API call: CreateUser by {}", currentUserId);
         UserResponse response = userService.createUser(request, currentUserId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -48,7 +51,9 @@ public class UserController {
     // @Operation(summary = "Get user by ID", description = "Retrieve user details by ID")
     public ResponseEntity<UserResponse> getUser(
             @PathVariable UUID userId,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+
+        UUID currentUserId = currentUser.getId();
         log.info("API call: GetUser {} by {}", userId, currentUserId);
         UserResponse response = userService.getUserById(userId, currentUserId);
         return ResponseEntity.ok(response);
@@ -59,6 +64,7 @@ public class UserController {
             @RequestParam(required = false) UUID tenantId,
             @AuthenticationPrincipal UserLoginResponse currentUser,
             Pageable pageable) {
+        
         UUID currentUserId = currentUser.getId(); // Add getId() in CustomUserDetails
         log.info("API call: ListUsers tenant:{} by {}", tenantId, currentUserId);
         Page<UserResponse> page = userService.getAllUsers(tenantId, currentUserId, pageable);
@@ -69,8 +75,10 @@ public class UserController {
     // @Operation(summary = "Update user", description = "Update user information")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable UUID userId,
-            @Valid @RequestBody CreateUserRequest request,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @Valid @RequestBody UpdateUserRequest request,
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+            
+        UUID currentUserId = currentUser.getId();
         log.info("API call: UpdateUser {} by {}", userId, currentUserId);
         UserResponse response = userService.updateUser(userId, request, currentUserId);
         return ResponseEntity.ok(response);
@@ -80,7 +88,9 @@ public class UserController {
     // @Operation(summary = "Delete user", description = "Soft delete user by ID")
     public ResponseEntity<Void> deleteUser(
             @PathVariable UUID userId,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+
+        UUID currentUserId = currentUser.getId();
         log.info("API call: DeleteUser {} by {}", userId, currentUserId);
         userService.deleteUser(userId, currentUserId);
         return ResponseEntity.noContent().build();
@@ -91,7 +101,9 @@ public class UserController {
     public ResponseEntity<UserResponse> assignRoles(
             @PathVariable UUID userId,
             @RequestBody Set<UUID> roleIds,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+        
+        UUID currentUserId = currentUser.getId();
         log.info("API call: AssignRoles {} to {} by {}", roleIds, userId, currentUserId);
         UserResponse response = userService.assignRoles(userId, roleIds, currentUserId);
         return ResponseEntity.ok(response);
@@ -102,7 +114,9 @@ public class UserController {
     public ResponseEntity<UserResponse> assignDevices(
             @PathVariable UUID userId,
             @RequestBody Set<UUID> deviceIds,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+        
+        UUID currentUserId = currentUser.getId();
         log.info("API call: AssignDevices {} to {} by {}", deviceIds, userId, currentUserId);
         UserResponse response = userService.assignDevices(userId, deviceIds, currentUserId);
         return ResponseEntity.ok(response);
@@ -113,7 +127,9 @@ public class UserController {
     public ResponseEntity<UserResponse> assignVehicles(
             @PathVariable UUID userId,
             @RequestBody Set<UUID> vehicleIds,
-            @AuthenticationPrincipal UUID currentUserId) {
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+
+        UUID currentUserId = currentUser.getId();
         log.info("API call: AssignVehicles {} to {} by {}", vehicleIds, userId, currentUserId);
         UserResponse response = userService.assignVehicles(userId, vehicleIds, currentUserId);
         return ResponseEntity.ok(response);

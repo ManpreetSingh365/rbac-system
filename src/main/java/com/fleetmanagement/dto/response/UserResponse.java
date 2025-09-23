@@ -32,8 +32,10 @@ public class UserResponse {
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UUID createdBy;
+    private UUID modifiedBy;
     
     private Set<RoleResponseDto> roles;
     private Set<DeviceResponse> devices;
-    private Set<VehicleResponse> vehicles;
+    private Set<VehicleResponseDto> vehicles;
 }

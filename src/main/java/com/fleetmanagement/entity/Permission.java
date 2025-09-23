@@ -64,7 +64,7 @@ public class Permission {
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
-    
+
     @Builder.Default
     @Column(name = "requires_scope", nullable = false)
     private Boolean requiresScope = false;
@@ -72,6 +72,12 @@ public class Permission {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "modified_by")
+    private UUID modifiedBy;
     
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     @JsonBackReference

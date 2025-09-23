@@ -21,5 +21,6 @@ public class RoleResponseDto {
     private Role.ScopeType scopeType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private UUID createdBy;
     private Set<UUID> permissionIds;
 }

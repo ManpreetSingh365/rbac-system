@@ -25,16 +25,14 @@ public class AppConfig {
      * Configure ModelMapper for DTO conversions
      * Optimized for performance with strict matching strategy
      */
-        @Bean
+    @Bean
     public ModelMapper modelMapper() {
         ModelMapper mapper = new ModelMapper();
 
         mapper.getConfiguration()
             .setMatchingStrategy(MatchingStrategies.STRICT)
             .setFieldMatchingEnabled(true)
-            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
-
-        // ✅ Converter for Hibernate PersistentSet -> HashSet
+            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);        
         Converter<Set<?>, Set<?>> setConverter = ctx -> {
             if (ctx.getSource() == null) return null;
             return new HashSet<>(ctx.getSource());

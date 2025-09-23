@@ -18,7 +18,7 @@ import java.util.UUID;
 
 /**
  * Service for managing roles, including creation, update, deletion, and permission management
- */
+*/
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -41,7 +41,7 @@ public class RoleService {
         }
 
         Role savedRole = roleRepository.save(role);
-        return roleMapper.toResponseDto(savedRole);
+        return roleMapper.toResponseDto(savedRole);        
     }
 
     public RoleResponseDto updateRole(UUID id, RoleRequestDto requestDto) {
@@ -60,17 +60,18 @@ public class RoleService {
         }
 
         Role updatedRole = roleRepository.save(role);
-        return roleMapper.toResponseDto(updatedRole);
+         return  roleMapper.toResponseDto(updatedRole);        
     }
 
     public RoleResponseDto getRoleById(UUID id) {
         Role role = roleRepository.findByIdWithPermissions(id)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + id));
-        return roleMapper.toResponseDto(role);
+        return  roleMapper.toResponseDto(role);
     }
 
     public Page<RoleResponseDto> getAllRoles(UUID tenantId, Role.ScopeType scopeType, Pageable pageable) {
         Page<Role> roles;
+
         if (tenantId != null && scopeType != null) {
             roles = roleRepository.findByTenantIdAndScopeTypeAndActiveTrue(tenantId, scopeType, pageable);
         } else if (tenantId != null) {
@@ -80,8 +81,10 @@ public class RoleService {
         } else {
             roles = roleRepository.findByActiveTrue(pageable);
         }
+
         return roles.map(roleMapper::toResponseDto);
     }
+
 
     public void deleteRole(UUID id) {
         Role role = roleRepository.findById(id)

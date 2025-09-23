@@ -1,6 +1,7 @@
 package com.fleetmanagement.service;
 
 import com.fleetmanagement.dto.request.CreateUserRequest;
+import com.fleetmanagement.dto.request.UpdateUserRequest;
 import com.fleetmanagement.dto.response.UserResponse;
 import com.fleetmanagement.entity.Device;
 import com.fleetmanagement.entity.Role;
@@ -145,7 +146,7 @@ public class UserService {
      * Update user information with business logic validation
      */
     @Transactional
-    public UserResponse updateUser(UUID userId, CreateUserRequest request, UUID currentUserId) {
+    public UserResponse updateUser(UUID userId, UpdateUserRequest request, UUID currentUserId) {
         log.info("Updating user with ID: {} by user: {}", userId, currentUserId);
         
         User existingUser = userRepository.findById(userId)
@@ -353,7 +354,7 @@ public class UserService {
             .collect(Collectors.toSet());
     }
     
-    private void updateUserFields(User existingUser, CreateUserRequest request) {
+    private void updateUserFields(User existingUser, UpdateUserRequest request) {
         existingUser.setFirstName(request.getFirstName());
         existingUser.setLastName(request.getLastName());
         existingUser.setPhoneNumber(request.getPhoneNumber());
@@ -448,12 +449,8 @@ public class UserService {
         return currentUserTenantId.equals(role.getTenantId());
     }
     
-    private void validateUserUpdateBusiness(User existingUser, CreateUserRequest request, UUID currentUserId) {
-        // Cannot change username
-        if (!existingUser.getUsername().equals(request.getUsername())) {
-            throw new IllegalArgumentException("Username cannot be changed");
-        }
-        
+    private void validateUserUpdateBusiness(User existingUser, UpdateUserRequest request, UUID currentUserId) {
+
         // Email uniqueness check if updating
         if (request.getEmail() != null && !request.getEmail().equals(existingUser.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {

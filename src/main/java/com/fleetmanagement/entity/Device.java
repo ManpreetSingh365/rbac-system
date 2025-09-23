@@ -34,7 +34,8 @@ import lombok.NoArgsConstructor;
     @Index(name = "idx_device_imei", columnList = "imei"),
     @Index(name = "idx_device_status", columnList = "status"),
     @Index(name = "idx_device_tenant", columnList = "tenant_id"),
-    @Index(name = "idx_device_expiry", columnList = "expiryAt")
+    @Index(name = "idx_device_expiry", columnList = "expiryAt"),
+    @Index(name = "idx_created_by", columnList = "created_by")
 })
 @Data
 @NoArgsConstructor
@@ -87,6 +88,12 @@ public class Device {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "modified_by")
+    private UUID modifiedBy;
     
     @ManyToMany(mappedBy = "devices", fetch = FetchType.LAZY)
     private Set<User> users;
