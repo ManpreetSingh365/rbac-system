@@ -31,55 +31,61 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "permissions", indexes = {
-    @Index(name = "idx_permission_code", columnList = "code"),
-    @Index(name = "idx_permission_category", columnList = "category"),
-    @Index(name = "idx_permission_active", columnList = "active")
+        @Index(name = "idx_permission_code", columnList = "code"),
+        @Index(name = "idx_permission_category", columnList = "category"),
+        @Index(name = "idx_permission_active", columnList = "active")
 })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true) 
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Permission {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-     @EqualsAndHashCode.Include
+    @EqualsAndHashCode.Include
     @Column(name = "id")
     private UUID id;
-    
+
     @Column(nullable = false, unique = true, length = 100)
     private String code;
-    
+
     @Column(nullable = false, length = 200)
     private String name;
-    
+
     @Column(length = 500)
     private String description;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PermissionCategory category;
-    
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
-    
+
     @Builder.Default
     @Column(name = "requires_scope", nullable = false)
     private Boolean requiresScope = false;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "modified_by")
+    private UUID modifiedBy;
+
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     @JsonBackReference
     private Set<Role> roles;
-    
+
     public enum PermissionCategory {
         SYSTEM_ADMINISTRATION,
-        USER_MANAGEMENT, 
+        USER_MANAGEMENT,
         DEVICE_MANAGEMENT,
         VEHICLE_MANAGEMENT,
         LOCATION_TRACKING,

@@ -18,10 +18,10 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "roles", indexes = {
-    @Index(name = "idx_role_name", columnList = "name"),
-    @Index(name = "idx_role_tenant", columnList = "tenant_id"),
-    @Index(name = "idx_role_active", columnList = "active"),
-    @Index(name = "idx_role_scope", columnList = "scope_type")
+        @Index(name = "idx_role_name", columnList = "name"),
+        @Index(name = "idx_role_tenant", columnList = "tenant_id"),
+        @Index(name = "idx_role_active", columnList = "active"),
+        @Index(name = "idx_role_scope", columnList = "scope_type")
 })
 @Getter
 @Setter
@@ -68,11 +68,17 @@ public class Role {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "modified_by")
+    private UUID modifiedBy;
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-        name = "role_permissions",
-        joinColumns = @JoinColumn(name = "role_id"),
-        inverseJoinColumns = @JoinColumn(name = "permission_id")
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions;
 

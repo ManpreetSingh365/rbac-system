@@ -2,6 +2,7 @@ package com.fleetmanagement.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -39,7 +40,8 @@ public class CreateUserRequest {
     @NotBlank(message = "Phone number is required")
     @Size(max = 15, message = "Phone number cannot exceed 15 characters")
     private String phoneNumber;
-    
+
+    @NotNull(message = "Tenant ID must not be null")
     private UUID tenantId;
     
     private Set<UUID> roleIds;

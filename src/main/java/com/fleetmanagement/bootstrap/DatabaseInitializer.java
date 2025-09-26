@@ -16,11 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Intelligent Database Initializer
- * 
+ *
  * Automatically handles both scenarios:
  * 1. First-time setup: Creates schema if database is empty
  * 2. Existing database: Skips schema creation if tables exist
- * 
+ *
  * This ensures seamless deployment in any environment without manual intervention.
  */
 @Slf4j
@@ -34,7 +34,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("🔍 Checking database schema status...");
-        
+
         if (isDatabaseEmpty()) {
             log.info("📦 Database is empty - Creating schema for first-time setup");
             createSchema();
@@ -51,9 +51,9 @@ public class DatabaseInitializer implements CommandLineRunner {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet tables = metaData.getTables(null, "public", "permissions", new String[]{"TABLE"});
-            
+
             boolean hasPermissionsTable = tables.next();
-            
+
             if (hasPermissionsTable) {
                 log.debug("Found existing permissions table - database is not empty");
                 return false;
@@ -79,18 +79,18 @@ public class DatabaseInitializer implements CommandLineRunner {
             createUsersTable();
             createDevicesTable();
             createVehiclesTable();
-            
+
             // Create join tables
             createJoinTables();
-            
+
             // Create indexes
             createIndexes();
-            
+
             // Create Flyway history table
             createFlywayHistoryTable();
-            
+
             log.info("🎯 Database schema creation completed successfully");
-            
+
         } catch (Exception e) {
             log.error("❌ Failed to create database schema: {}", e.getMessage(), e);
             throw new RuntimeException("Database schema creation failed", e);
@@ -273,7 +273,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 success BOOLEAN NOT NULL
             )
         """);
-        
+
         // Mark V1 migration as applied
         jdbcTemplate.execute("""
             INSERT INTO flyway_schema_history 
