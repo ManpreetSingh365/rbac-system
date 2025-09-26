@@ -7,6 +7,8 @@ import com.fleetmanagement.entity.Role;
 import com.fleetmanagement.service.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -63,7 +65,7 @@ public class RoleController {
             @RequestParam(required = false) UUID tenantId,
             @RequestParam(required = false) Role.ScopeType scopeType,
             @AuthenticationPrincipal UserLoginResponse currentUser,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         UUID currentUserId = currentUser.getId();
         Page<RoleResponseDto> roles = roleService.getAllRoles(currentUserId, tenantId, scopeType, pageable);
         return ResponseEntity.ok(roles);

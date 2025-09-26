@@ -157,7 +157,9 @@ public class UserController {
             @AuthenticationPrincipal UserLoginResponse currentUser
     ){
         boolean isUpdated = userService.resetPassword(email, oldPassword, newPassword);
-
-        return ResponseEntity.ok("");
+        if(!isUpdated){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password update failed");
+        }
+        return ResponseEntity.ok("Updated Successfully");
     }
 }
