@@ -54,11 +54,13 @@ public class UserService {
      * Business Logic: Validates permissions, checks uniqueness, assigns relationships
      */
     @Transactional
-    public UserResponse createUser(CreateUserRequest request, UUID currentUserId) {
+    public UserResponse createUser(CreateUserRequest request, UUID currentUserId, UUID tenantId) {
         log.debug("Creating user with username: {} by user: {}", request.getUsername(), currentUserId);
 
         // Step 1: Validate current user permissions
-        validateUserCreationPermissions(currentUserId, request.getTenantId());
+        validateUserCreationPermissions(currentUserId, tenantId);
+
+        request.setTenantId(tenantId);
 
         log.debug("GOT READ PERMISSIONS");
 
@@ -79,11 +81,11 @@ public class UserService {
      * Get user by ID with business logic validation
      */
     @Transactional(readOnly = true)
-    public UserResponse getUserById(UUID userId, UUID currentUserId) {
+    public UserResponse getUserById(UUID userId, UUID currentUserId, UUID tenantId) {
         log.debug("Fetching user with ID: {} by user: {}", userId, currentUserId);
 
         // Validate permission to read user
-        validateUserReadPermissions(currentUserId, null);
+        validateUserReadPermissions(currentUserId, tenantId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
@@ -265,18 +267,7 @@ public class UserService {
 
     // =================== PRIVATE HELPER METHODS ===================
 
-    private User buildUserEntity(CreateUserRequest request) {
-        return User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phoneNumber(request.getPhoneNumber())
-                .tenantId(request.getTenantId())
-                .active(true)
-                .build();
-    }
+    
 
     private void validateUserUniqueness(String username, String email) {
         if (userRepository.existsByUsername(username)) {

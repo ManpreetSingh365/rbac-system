@@ -7,6 +7,8 @@ import com.fleetmanagement.entity.Device;
 import com.fleetmanagement.service.DeviceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -77,7 +79,7 @@ public class DeviceController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime expiryBefore,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime expiryBetweenStart,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime expiryBetweenEnd,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
         Page<DeviceResponseDto> devices = deviceService.getAllDevices(

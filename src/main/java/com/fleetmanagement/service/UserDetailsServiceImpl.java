@@ -66,7 +66,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new UserLoginResponse(
                 user.getId(),                  // UUID id
                 user.getUsername(),            // username
-                user.getPassword(),            // password
+                user.getPassword(),
+                user.getTenantId(),            // password
                 authorities                    // roles/permissions
         );
     }

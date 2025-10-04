@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Data Initialization Component - FIXED
@@ -31,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UUID tenantId = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
 
     @Override
     @Transactional
@@ -212,8 +214,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // FIXED: Check by username instead of email
         if (userRepository.findByUsernameAndActiveTrue("superadmin").isEmpty()) {
-            Role superAdminRole = roleRepository.findByName("SuperAdmin").orElseThrow();
-
+            Role superAdminRole = roleRepository.findByName("SuperAdmin").orElseThrow();                
             User superAdmin = User.builder()
                     .username("superadmin")  // FIXED: Added missing username field
                     .email("superadmin@fleetmanagement.com")
@@ -221,6 +222,7 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName("Admin")
                     .password(passwordEncoder.encode("SuperAdmin@123"))
                     .phoneNumber("+1234567890")
+                    .tenantId(tenantId)
                     .active(true)
                     .roles(Set.of(superAdminRole))
                     .build();
@@ -240,7 +242,7 @@ public class DataInitializer implements CommandLineRunner {
                 .code(code)
                 .name(name)
                 .description(description)
-                .category(category)
+                .category(category)                
                 .active(true)
                 .requiresScope(!"SUPER_ADMIN".equals(code))
                 .build();
@@ -256,7 +258,8 @@ public class DataInitializer implements CommandLineRunner {
                 .name(name)
                 .description(description)
                 .active(true)
-                .scopeType(Role.ScopeType.TENANT)
+                .tenantId(tenantId)
+                .scopeType(Role.ScopeType.TENANT)                
                 .build();
     }
 

@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -45,8 +47,9 @@ public class UserController {
             @AuthenticationPrincipal UserLoginResponse currentUser) {
 
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         log.info("API call: CreateUser by {}", currentUserId);
-        UserResponse response = userService.createUser(request, currentUserId);
+        UserResponse response = userService.createUser(request, currentUserId, tenantId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -58,20 +61,21 @@ public class UserController {
             @AuthenticationPrincipal UserLoginResponse currentUser) {
 
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         log.info("API call: GetUser {} by {}", userId, currentUserId);
-        UserResponse response = userService.getUserById(userId, currentUserId);
+        UserResponse response = userService.getUserById(userId, currentUserId, tenantId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'USER_READ')")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Page<UserResponse>> listUsers(
-            @RequestParam(required = false) UUID tenantId,
+    public ResponseEntity<Page<UserResponse>> listUsers(         
             @AuthenticationPrincipal UserLoginResponse currentUser,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
 
         UUID currentUserId = currentUser.getId(); // Add getId() in CustomUserDetails
+        UUID tenantId = currentUser.getTenantId();
         log.info("API call: ListUsers tenant:{} by {}", tenantId, currentUserId);
         Page<UserResponse> page = userService.getAllUsers(tenantId, currentUserId, pageable);
         return ResponseEntity.ok(page);

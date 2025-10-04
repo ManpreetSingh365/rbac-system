@@ -7,6 +7,8 @@ import com.fleetmanagement.entity.Permission;
 import com.fleetmanagement.service.PermissionManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -70,7 +72,7 @@ public class PermissionController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) UUID roleId,
             @AuthenticationPrincipal UserLoginResponse currentUser,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         UUID userId = currentUser.getId();
         Page<PermissionResponseDto> permissions = permissionManagementService.getAllPermissions(
                 userId, code, category, requiresScope, name, roleId, pageable);

@@ -6,6 +6,8 @@ import com.fleetmanagement.entity.Vehicle;
 import com.fleetmanagement.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -60,7 +62,7 @@ public class VehicleController {
             @RequestParam(required = false) Vehicle.VehicleType vehicleType,
             @RequestParam(required = false) Integer startYear,
             @RequestParam(required = false) Integer endYear,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         Page<VehicleResponseDto> vehicles = vehicleService.getAllVehicles(
                 tenantId, status, fleetId, brand, model, vehicleType, startYear, endYear, pageable);
         return ResponseEntity.ok(vehicles);

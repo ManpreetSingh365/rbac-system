@@ -20,6 +20,7 @@ public class UserLoginResponse implements UserDetails {
     private UUID id;
     private String username;
     private String password;
+    private UUID tenantId;
     private Collection<? extends GrantedAuthority> authorities;
 
     @Override

@@ -27,8 +27,7 @@ public class UserResponse {
     private String lastName;
     private String fullName;
     private String phoneNumber;
-    private Boolean active;
-    private UUID tenantId;
+    private Boolean active;    
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
