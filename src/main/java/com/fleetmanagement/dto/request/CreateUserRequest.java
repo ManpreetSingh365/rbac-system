@@ -40,10 +40,7 @@ public class CreateUserRequest {
     @NotBlank(message = "Phone number is required")
     @Size(max = 15, message = "Phone number cannot exceed 15 characters")
     private String phoneNumber;
-
-    @NotNull(message = "Tenant ID must not be null")
-    private UUID tenantId;
-
+    
     private Set<UUID> roleIds;
 
     private Set<UUID> deviceIds;

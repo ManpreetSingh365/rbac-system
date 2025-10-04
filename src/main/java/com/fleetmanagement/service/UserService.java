@@ -59,8 +59,7 @@ public class UserService {
 
         // Step 1: Validate current user permissions
         validateUserCreationPermissions(currentUserId, tenantId);
-
-        request.setTenantId(tenantId);
+        
 
         log.debug("GOT READ PERMISSIONS");
 
@@ -69,6 +68,8 @@ public class UserService {
 
         // Step 3: Create and populate user entity
         User user = userMapper.toEntity(request);
+
+        user.setTenantId(tenantId);
 
         // Step 7: Save user and return response
         User savedUser = userRepository.save(user);
