@@ -8,10 +8,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.modelmapper.Converter;
 
 import java.util.Set;
-
 
 /**
  * Application Configuration
@@ -20,23 +21,38 @@ import java.util.Set;
  */
 @Configuration
 public class AppConfig {
-    
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:3000")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+            }
+        };
+    }
+
     /**
      * Configure ModelMapper for DTO conversions
      * Optimized for performance with strict matching strategy
      */
-        @Bean
+    @Bean
     public ModelMapper modelMapper() {
         ModelMapper mapper = new ModelMapper();
 
         mapper.getConfiguration()
-            .setMatchingStrategy(MatchingStrategies.STRICT)
-            .setFieldMatchingEnabled(true)
-            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
+                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
 
         // ✅ Converter for Hibernate PersistentSet -> HashSet
         Converter<Set<?>, Set<?>> setConverter = ctx -> {
-            if (ctx.getSource() == null) return null;
+            if (ctx.getSource() == null)
+                return null;
             return new HashSet<>(ctx.getSource());
         };
 
@@ -44,7 +60,7 @@ public class AppConfig {
 
         return mapper;
     }
-    
+
     /**
      * Configure password encoder for security
      * Using BCrypt with strength 12 for enhanced security

@@ -2,6 +2,7 @@ package com.fleetmanagement.controller;
 
 import com.fleetmanagement.dto.request.LoginRequest;
 import com.fleetmanagement.dto.response.UserLoginResponse;
+import com.fleetmanagement.dto.response.UserLoginResponseDto;
 import com.fleetmanagement.service.JwtService;
 import lombok.RequiredArgsConstructor;
 
@@ -23,16 +24,17 @@ public class AuthController {
     @Autowired
     private final JwtService jwtService;
 
-   @PostMapping("/login")
-public String login(@RequestBody LoginRequest request) {
-    Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-    );
+    @PostMapping("/login")
+    public UserLoginResponseDto login(@RequestBody LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-    UserLoginResponse user = (UserLoginResponse) authentication.getPrincipal();
-    UUID userId = user.getId(); // get UUID from your custom UserDetails implementation
+        UserLoginResponse user = (UserLoginResponse) authentication.getPrincipal();
+        UUID userId = user.getId();
 
-    return jwtService.generateToken(user, userId);
-}
+        String jwt = jwtService.generateToken(user, userId);
 
+        // Return JSON object with token
+        return new UserLoginResponseDto(jwt);
+    }
 }
