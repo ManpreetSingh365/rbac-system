@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fleet_db
+    restart: always
+    environment:
+      POSTGRES_DB: fleet_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: fleet_app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/fleet_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123456
+      JWT_SECRET: 1f8b08c5a13d47e5b2c1d0f3c7e8a9b0c2d4e6f8a1b3c5d7e9f1023456789abc
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:

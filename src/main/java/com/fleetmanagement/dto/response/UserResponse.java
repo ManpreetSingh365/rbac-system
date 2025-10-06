@@ -19,7 +19,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class UserResponse {
-    
+
     private UUID id;
     private String username;  // Changed from email to username
     private String email;     // Optional field
@@ -27,13 +27,14 @@ public class UserResponse {
     private String lastName;
     private String fullName;
     private String phoneNumber;
-    private Boolean active;
-    private UUID tenantId;
+    private Boolean active;    
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
-    private Set<RoleResponse> roles;
-    private Set<DeviceResponse> devices;
-    private Set<VehicleResponse> vehicles;
+    private UUID createdBy;
+    private UUID modifiedBy;
+
+    private Set<UUID> roleIds;
+    private Set<UUID> devicesIds;
+    private Set<UUID> vehiclesIds;
 }

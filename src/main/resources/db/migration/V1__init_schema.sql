@@ -11,6 +11,8 @@ CREATE TABLE permissions (
     category VARCHAR(50) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     requires_scope BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by UUID,
+    modified_by UUID,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -22,6 +24,8 @@ CREATE TABLE roles (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     tenant_id UUID,
     scope_type VARCHAR(50) NOT NULL,
+    created_by UUID,
+    modified_by UUID,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -38,6 +42,8 @@ CREATE TABLE users (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     tenant_id UUID,
     last_login TIMESTAMP,
+    created_by UUID,
+    modified_by UUID,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,6 +61,8 @@ CREATE TABLE devices (
     installer_phone VARCHAR(20),
     last_heartbeat TIMESTAMP,
     expiry_at TIMESTAMP,
+    created_by UUID,
+    modified_by UUID,
     installed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -72,6 +80,8 @@ CREATE TABLE vehicles (
     tenant_id UUID,
     fleet_id UUID,
     device_id UUID,
+    created_by UUID,
+    modified_by UUID,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

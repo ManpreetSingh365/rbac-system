@@ -1,0 +1,54 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/fleet_management
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+  http2:
+    enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:1f8b08c5a13d47e5b2c1d0f3c7e8a9b0c2d4e6f8a1b3c5d7e9f1023456789abc}
+    expiration: 3600000
+  name: Fleet Management RBAC System
+  version: 1.0.0
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.fleetmanagement: DEBUG
+    org.springframework.boot.autoconfigure: WARN
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
