@@ -4,6 +4,7 @@ import com.fleetmanagement.dto.request.RoleRequestDto;
 import com.fleetmanagement.dto.response.RoleResponseDto;
 import com.fleetmanagement.dto.response.UserLoginResponse;
 import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
 import com.fleetmanagement.service.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,11 +64,11 @@ public class RoleController {
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ROLE_READ')")
     public ResponseEntity<Page<RoleResponseDto>> getAllRoles(
             @RequestParam(required = false) UUID tenantId,
-            @RequestParam(required = false) Role.ScopeType scopeType,
+            @RequestParam(required = false) RoleScope roleScope,
             @AuthenticationPrincipal UserLoginResponse currentUser,
             @ParameterObject Pageable pageable) {
         UUID currentUserId = currentUser.getId();
-        Page<RoleResponseDto> roles = roleService.getAllRoles(currentUserId, tenantId, scopeType, pageable);
+        Page<RoleResponseDto> roles = roleService.getAllRoles(currentUserId, tenantId, roleScope, pageable);
         return ResponseEntity.ok(roles);
     }
 

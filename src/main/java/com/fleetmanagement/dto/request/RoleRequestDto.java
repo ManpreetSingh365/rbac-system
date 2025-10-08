@@ -1,6 +1,8 @@
 package com.fleetmanagement.dto.request;
 
 import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,8 +29,8 @@ public class RoleRequestDto {
 
     private UUID tenantId;
 
-    @NotNull(message = "Scope type is required")
-    private Role.ScopeType scopeType;
+    @NotNull(message = "Role Scope is required")
+    private RoleScope roleScope;
 
     private Set<UUID> permissionIds;
 }

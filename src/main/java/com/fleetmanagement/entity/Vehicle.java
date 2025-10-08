@@ -1,15 +1,10 @@
+
 package com.fleetmanagement.entity;
-
-import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.UUID;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -20,17 +15,31 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.UUID;
 
-/**
- * Vehicle Entity - Represents fleet vehicles with device assignments
- * Updated: Changed make to brand
- * Supports assignment to multiple users and single device mapping
- */
 @Entity
 @Table(name = "vehicles", indexes = {
         @Index(name = "idx_vehicle_plate", columnList = "licensePlate"),
@@ -38,32 +47,55 @@ import lombok.NoArgsConstructor;
         @Index(name = "idx_vehicle_status", columnList = "status"),
         @Index(name = "idx_vehicle_brand", columnList = "brand")
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// @EntityListeners(AuditingEntityListener.class)
 public class Vehicle {
 
+    // =======================
+    // Primary Key
+    // =======================
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id")
+    @JdbcTypeCode(SqlTypes.UUID)
+    @EqualsAndHashCode.Include
     private UUID id;
 
+    // =======================
+    // Basic Fields
+    // =======================
+    @NotBlank
+    @Size(max = 15)
     @Column(nullable = false, unique = true, length = 15)
+    @ToString.Include
     private String licensePlate;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false, length = 100)
-    private String brand;  // Changed from make to brand
+    private String brand;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String model;
 
+    @NotNull
+    @Min(1900)
+    @Max(2100)
     @Column(nullable = false)
     private Integer year;
 
+    @Size(max = 20)
     @Column(length = 20)
     private String vin;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private VehicleType vehicleType;
@@ -79,27 +111,49 @@ public class Vehicle {
     @Column(name = "fleet_id")
     private UUID fleetId;
 
-    @CreationTimestamp
+    // =======================
+    // Auditing Fields
+    // =======================
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
     private UUID createdBy;
-
-    @Column(name = "modified_by")
     private UUID modifiedBy;
 
+    // =======================
+    // Relations
+    // =======================
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "device_id")
     private Device device;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "vehicles", fetch = FetchType.LAZY)
     private Set<User> users;
 
+    // =======================
+    // Lifecycle Hooks
+    // =======================
+    @PrePersist
+    @PreUpdate
+    private void normalize() {
+        if (licensePlate != null)
+            licensePlate = licensePlate.trim().toUpperCase();
+        if (brand != null)
+            brand = brand.trim();
+        if (model != null)
+            model = model.trim();
+    }
+
+    // =======================
+    // Enums
+    // =======================
     public enum VehicleType {
         CAR, TRUCK, VAN, MOTORCYCLE, BUS, TRAILER
     }

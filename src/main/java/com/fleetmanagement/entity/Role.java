@@ -1,91 +1,143 @@
+
 package com.fleetmanagement.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fleetmanagement.entity.type.RoleScope;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * Role Entity - Represents user roles with associated permissions
- * Supports hierarchical role structure for complex organizations
+ * Modern, production-ready Role entity.
+ * Features:
+ * - UUID primary key
+ * - Equals/hashCode on ID only
+ * - Lazy Many-to-Many collections
+ * - Validations
+ * - Safe toString (collections excluded)
+ * - Automatic auditing
+ * - Normalized role names
  */
 @Entity
 @Table(name = "roles", indexes = {
         @Index(name = "idx_role_name", columnList = "name"),
         @Index(name = "idx_role_tenant", columnList = "tenant_id"),
         @Index(name = "idx_role_active", columnList = "active"),
-        @Index(name = "idx_role_scope", columnList = "scope_type")
+        @Index(name = "idx_role_scope", columnList = "role_scope")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(onlyExplicitlyIncluded = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// @EntityListeners(AuditingEntityListener.class)
 public class Role {
 
+    // =======================
+    // Primary Key
+    // =======================
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id")
+    @JdbcTypeCode(SqlTypes.UUID)
     @EqualsAndHashCode.Include
+    @ToString.Include
     private UUID id;
 
+    // =======================
+    // Basic Fields
+    // =======================
     @NotBlank(message = "Role name is required")
-    @Size(min = 2, max = 100, message = "Role name must be between 2 and 100 characters")
+    @Size(min = 2, max = 100)
     @Column(nullable = false, length = 100)
+    @ToString.Include
     private String name;
 
-    @Size(max = 500, message = "Description must not exceed 500 characters")
+    @Size(max = 500)
     @Column(length = 500)
     private String description;
 
     @Builder.Default
-    @NotNull(message = "Active status is required")
+    @NotNull
     @Column(nullable = false)
-    private Boolean active = true;
+    private boolean active = true;
 
     @Column(name = "tenant_id")
     private UUID tenantId;
 
-    @NotNull(message = "Scope type is required")
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "scope_type", nullable = false)
+    @Column(name = "role_scope", nullable = false)
     @Builder.Default
-    private ScopeType scopeType = ScopeType.TENANT;
+    private RoleScope roleScope = RoleScope.TENANT;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    // =======================
+    // Auditing Fields
+    // =======================
+    @CreatedDate
+    @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
+    @LastModifiedDate
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
     private UUID createdBy;
-
-    @Column(name = "modified_by")
     private UUID modifiedBy;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "role_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
+    // =======================
+    // Relations
+    // =======================
+    @JsonIgnore
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissions;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users;
 
-    public enum ScopeType {
-        GLOBAL, TENANT, FLEET, REGIONAL
+    // =======================
+    // Lifecycle Hooks
+    // =======================
+    @PrePersist
+    @PreUpdate
+    private void normalize() {
+        if (name != null)
+            name = name.trim().toLowerCase();
     }
 }

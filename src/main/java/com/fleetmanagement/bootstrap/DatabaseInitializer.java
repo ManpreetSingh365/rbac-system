@@ -118,7 +118,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                 name VARCHAR(100) NOT NULL UNIQUE,
                 description VARCHAR(500),
                 active BOOLEAN DEFAULT true,
-                scope_type VARCHAR(50) DEFAULT 'TENANT',
+                role_scope VARCHAR(50) DEFAULT 'TENANT',
                 tenant_id UUID,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -23,7 +23,7 @@ CREATE TABLE roles (
     description VARCHAR(500),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     tenant_id UUID,
-    scope_type VARCHAR(50) NOT NULL,
+    role_scope VARCHAR(50) NOT NULL,
     created_by UUID,
     modified_by UUID,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

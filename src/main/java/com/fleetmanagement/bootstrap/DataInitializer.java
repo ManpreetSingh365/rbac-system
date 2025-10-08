@@ -3,6 +3,7 @@ package com.fleetmanagement.bootstrap;
 import com.fleetmanagement.entity.Permission;
 import com.fleetmanagement.entity.Role;
 import com.fleetmanagement.entity.User;
+import com.fleetmanagement.entity.type.RoleScope;
 import com.fleetmanagement.repository.PermissionRepository;
 import com.fleetmanagement.repository.RoleRepository;
 import com.fleetmanagement.repository.UserRepository;
@@ -259,7 +260,7 @@ public class DataInitializer implements CommandLineRunner {
                 .description(description)
                 .active(true)
                 .tenantId(tenantId)
-                .scopeType(Role.ScopeType.TENANT)                
+                .roleScope(RoleScope.TENANT)                
                 .build();
     }
 

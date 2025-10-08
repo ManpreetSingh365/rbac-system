@@ -1,6 +1,8 @@
 package com.fleetmanagement.repository;
 
 import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,9 +65,9 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     long countByTenantIdAndActiveTrue(UUID tenantId);
 
     /**
-     * Find roles by scope type
+     * Find roles by Role Scope
      */
-    Page<Role> findByScopeTypeAndActiveTrue(Role.ScopeType scopeType, Pageable pageable);
+    Page<Role> findByRoleScopeAndActiveTrue(RoleScope roleScope, Pageable pageable);
 
     /**
      * Find roles assigned to specific user
@@ -85,7 +87,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     boolean existsByNameAndTenantId(@Param("name") String name, @Param("tenantId") UUID tenantId);
 
     /**
-     * Find roles by tenant ID and scope type with active status
+     * Find roles by tenant ID and Role Scope with active status
      */
-    Page<Role> findByTenantIdAndScopeTypeAndActiveTrue(@Param("tenantId") UUID tenantId, @Param("scopeType") Role.ScopeType scopeType, Pageable pageable);
+    Page<Role> findByTenantIdAndRoleScopeAndActiveTrue(@Param("tenantId") UUID tenantId, @Param("roleScope") RoleScope roleScope, Pageable pageable);
 }
