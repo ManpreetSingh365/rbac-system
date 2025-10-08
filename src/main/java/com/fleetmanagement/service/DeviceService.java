@@ -31,21 +31,22 @@ public class DeviceService {
     private final DeviceMapper deviceMapper;
     private final PermissionService permissionService;
 
-    public DeviceResponseDto createDevice(UUID userId, DeviceRequestDto requestDto) {
+    public DeviceResponseDto createDevice(UUID userId, DeviceRequestDto requestDto, UUID tenandId) {
         log.debug("Creating device with IMEI: {} by user: {}", requestDto.getImei(), userId);
-        if (!permissionService.hasPermission(userId, "DEVICE_REGISTER", requestDto.getTenantId())) {
-            throw new SecurityException("User lacks DEVICE_REGISTER permission for tenant: " + requestDto.getTenantId());
+        if (!permissionService.hasPermission(userId, "DEVICE_REGISTER", tenandId)) {
+            throw new SecurityException("User lacks DEVICE_REGISTER permission for tenant: " + tenandId);
         }
         if (deviceRepository.existsByImei(requestDto.getImei())) {
             throw new IllegalArgumentException("Device with IMEI " + requestDto.getImei() + " already exists");
         }
 
         Device device = deviceMapper.toEntity(requestDto);
+        device.setTenantId(tenandId);
         Device savedDevice = deviceRepository.save(device);
         return deviceMapper.toResponseDto(savedDevice);
     }
 
-    public DeviceResponseDto updateDevice(UUID userId, UUID id, DeviceRequestDto requestDto) {
+    public DeviceResponseDto updateDevice(UUID userId, UUID id, DeviceRequestDto requestDto, UUID tenandId) {
         log.debug("Updating device: {} by user: {}", id, userId);
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Device not found with id: " + id));
@@ -58,6 +59,8 @@ public class DeviceService {
         }
 
         deviceMapper.updateEntityFromDto(requestDto, device);
+
+        device.setTenantId(id);
         Device updatedDevice = deviceRepository.save(device);
         return deviceMapper.toResponseDto(updatedDevice);
     }
@@ -138,6 +141,8 @@ public class DeviceService {
         if (!permissionService.hasPermission(userId, "DEVICE_DELETE", device.getTenantId())) {
             throw new SecurityException("User lacks DEVICE_DELETE permission for tenant: " + device.getTenantId());
         }
-        deviceRepository.delete(device);
+        // deviceRepository.delete(device);
+        device.setStatus(Device.DeviceStatus.INACTIVE);
+        deviceRepository.save(device);
     }
 }

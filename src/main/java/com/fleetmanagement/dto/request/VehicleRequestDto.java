@@ -41,8 +41,6 @@ public class VehicleRequestDto {
     @NotNull(message = "Vehicle status is required")
     private Vehicle.VehicleStatus status;
 
-    private UUID tenantId;
-
     private UUID fleetId;
 
     private UUID deviceId;

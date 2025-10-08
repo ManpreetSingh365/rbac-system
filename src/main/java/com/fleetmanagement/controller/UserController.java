@@ -110,7 +110,7 @@ public class UserController {
 
     @PostMapping("/{userId}/roles")
 
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ASSIGN_ROLE')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ROLE_ASSIGN')")
     // @Operation(summary = "Assign roles", description = "Assign roles to a user")
     public ResponseEntity<UserResponse> assignRoles(
             @PathVariable UUID userId,
@@ -124,7 +124,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/devices")
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ASSIGN_DEVICE')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'DEVICE_ASSIGN')")
     // @Operation(summary = "Assign devices", description = "Assign devices to a user")
     public ResponseEntity<UserResponse> assignDevices(
             @PathVariable UUID userId,
@@ -138,7 +138,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/vehicles")    
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ASSIGN_VEHICLE')")
+    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_ASSIGN')")
     // @Operation(summary = "Assign vehicles", description = "Assign vehicles to a user")
     public ResponseEntity<UserResponse> assignVehicles(
             @PathVariable UUID userId,

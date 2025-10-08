@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.expression.spel.ast.Assign;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
         createPermission("ROLE_CREATE", "Create Role",
                 "Create new roles", Permission.PermissionCategory.USER_MANAGEMENT);
         createPermission("ROLE_DELETE", "Delete Role",
-                "Delete existing roles", Permission.PermissionCategory.USER_MANAGEMENT);
+                "Delete existing roles", Permission.PermissionCategory.USER_MANAGEMENT);        
 
         // Device Management
         createPermission("DEVICE_READ", "Read Device",
@@ -90,11 +91,13 @@ public class DataInitializer implements CommandLineRunner {
                 "Add new devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_ASSIGN", "Assign Device",
                 "Assign devices to vehicles/users", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_ACTIVATE", "Activate Device",
+        createPermission("DEVICE_UPDATE", "Update Device",
                 "Enable/disable devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_REMOTE_CONFIG", "Remote Configuration",
                 "Push configuration updates", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_BULK_OPERATIONS", "Bulk Operations",
+                "Mass device operations", Permission.PermissionCategory.DEVICE_MANAGEMENT);
+        createPermission("DEVICE_DELETE", "Delete Device",
                 "Mass device operations", Permission.PermissionCategory.DEVICE_MANAGEMENT);
 
         // Vehicle Management
@@ -108,6 +111,10 @@ public class DataInitializer implements CommandLineRunner {
                 "Connect devices to vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
         createPermission("FLEET_MANAGE", "Fleet Management",
                 "Organize vehicle groups", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
+        createPermission("VEHICLE_ASSIGN",  "Assign Vehicle to users",
+                "Organize vehicle groups", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
+        createPermission("VEHICLE_DELETE", "Delete Vehicle",
+                "Remove vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
 
         // Location & Tracking
         createPermission("VIEW_LOCATION_LIVE", "Live Location",
@@ -154,7 +161,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // SuperAdmin Role - All permissions
         Role superAdminRole = createRole("SuperAdmin", "Super Administrator with complete system access");
-        superAdminRole.setPermissions(Set.copyOf(permissionRepository.findAll()));
+        superAdminRole.setPermissions(getPermissionsByCode("SUPER_ADMIN"));
         roleRepository.save(superAdminRole);
 
         // TenantAdmin Role - Comprehensive tenant management

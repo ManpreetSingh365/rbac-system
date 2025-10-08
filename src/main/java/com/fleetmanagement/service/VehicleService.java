@@ -25,22 +25,27 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
+    private final PermissionService permissionService;
 
-    public VehicleResponseDto createVehicle(VehicleRequestDto requestDto) {
+    public VehicleResponseDto createVehicle(VehicleRequestDto requestDto, UUID tenandId, UUID userId) {
+
+        if (!permissionService.hasPermission(userId, "VEHICLE_CREATE", tenandId)) {
+            throw new SecurityException("User lacks DEVICE_REGISTER permission for tenant: " + tenandId);
+        }
+
         validateVehicleRequest(requestDto);
-        if (vehicleRepository.existsByLicensePlate(requestDto.getLicensePlate())) {
-            throw new IllegalArgumentException("Vehicle with license plate " + requestDto.getLicensePlate() + " already exists");
-        }
-        if (requestDto.getVin() != null && vehicleRepository.existsByVin(requestDto.getVin())) {
-            throw new IllegalArgumentException("Vehicle with VIN " + requestDto.getVin() + " already exists");
-        }
-
         Vehicle vehicle = vehicleMapper.toEntity(requestDto);
+        vehicle.setTenantId(tenandId);
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
         return vehicleMapper.toResponseDto(savedVehicle);
     }
 
-    public VehicleResponseDto updateVehicle(UUID id, VehicleRequestDto requestDto) {
+    public VehicleResponseDto updateVehicle(UUID id, VehicleRequestDto requestDto, UUID tenandId, UUID userId) {
+
+        if (!permissionService.hasPermission(userId, "VEHICLE_UPDATE", tenandId)) {
+            throw new SecurityException("User lacks VEHICLE_UPDATE permission for tenant: " + tenandId);
+        }
+
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + id));
 
@@ -55,12 +60,18 @@ public class VehicleService {
         }
 
         vehicleMapper.updateEntityFromDto(requestDto, vehicle);
+        vehicle.setTenantId(tenandId);
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
         return vehicleMapper.toResponseDto(updatedVehicle);
     }
 
     @Transactional(readOnly = true)
-    public VehicleResponseDto getVehicleById(UUID id) {
+    public VehicleResponseDto getVehicleById(UUID id, UUID tenandId, UUID userId) {
+
+        if (!permissionService.hasPermission(userId, "VEHICLE_READ", tenandId)) {
+            throw new SecurityException("User lacks VEHICLE_UPDATE permission for tenant: " + tenandId);
+        }
+
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + id));
         return vehicleMapper.toResponseDto(vehicle);
@@ -68,6 +79,7 @@ public class VehicleService {
 
     @Transactional(readOnly = true)
     public Page<VehicleResponseDto> getAllVehicles(
+            UUID userId,
             UUID tenantId,
             Vehicle.VehicleStatus status,
             UUID fleetId,
@@ -77,6 +89,9 @@ public class VehicleService {
             Integer startYear,
             Integer endYear,
             Pageable pageable) {
+        if (!permissionService.hasPermission(userId, "VEHICLE_READ", tenantId)) {
+            throw new SecurityException("User lacks VEHICLE_READ permission for tenant: " + tenantId);
+        }
         Page<Vehicle> vehicles;
         if (tenantId != null && status != null) {
             vehicles = vehicleRepository.findByStatusAndTenantId(status, tenantId, pageable);
@@ -100,7 +115,11 @@ public class VehicleService {
         return vehicles.map(vehicleMapper::toResponseDto);
     }
 
-    public void deleteVehicle(UUID id) {
+    public void deleteVehicle(UUID id, UUID tenandId, UUID userId) {
+
+        if (!permissionService.hasPermission(userId, "VEHICLE_DELETE", tenandId)) {
+            throw new SecurityException("User lacks VEHICLE_DELETE permission for tenant: " + tenandId);
+        }
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + id));
         vehicle.setStatus(Vehicle.VehicleStatus.RETIRED);
@@ -110,6 +129,13 @@ public class VehicleService {
     private void validateVehicleRequest(VehicleRequestDto requestDto) {
         if (requestDto.getYear() != null && requestDto.getYear() > LocalDateTime.now().getYear() + 1) {
             throw new IllegalArgumentException("Year cannot be in the future");
+        }
+
+        if (vehicleRepository.existsByLicensePlate(requestDto.getLicensePlate())) {
+            throw new IllegalArgumentException("Vehicle with license plate " + requestDto.getLicensePlate() + " already exists");
+        }
+        if (requestDto.getVin() != null && vehicleRepository.existsByVin(requestDto.getVin())) {
+            throw new IllegalArgumentException("Vehicle with VIN " + requestDto.getVin() + " already exists");
         }
     }
 }

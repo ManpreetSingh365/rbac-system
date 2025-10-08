@@ -33,7 +33,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * Check if user exists by username
      */
-    boolean existsByUsername(String username);
+    boolean existsByUsernameAndActiveTrue(String username);
+
 
     @Query("""
     SELECT DISTINCT u FROM User u

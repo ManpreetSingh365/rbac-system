@@ -23,9 +23,7 @@ public class RoleRequestDto {
     private String description;
 
     @NotNull(message = "Active status is required")
-    private Boolean active;
-
-    private UUID tenantId;
+    private Boolean active;    
 
     @NotNull(message = "Scope type is required")
     private Role.ScopeType scopeType;

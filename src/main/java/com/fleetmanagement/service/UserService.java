@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -271,7 +270,7 @@ public class UserService {
     
 
     private void validateUserUniqueness(String username, String email) {
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByUsernameAndActiveTrue(username)) {
             throw new IllegalArgumentException("User with username already exists: " + username);
         }
 

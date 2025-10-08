@@ -33,7 +33,7 @@ public class DeviceRequestDto {
     @NotNull(message = "Status is required")
     private Device.DeviceStatus status;
 
-    private UUID tenantId;
+
 
     @NotNull(message = "Registered by SMS is required")
     private Boolean registeredBySms;

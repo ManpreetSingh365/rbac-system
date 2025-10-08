@@ -143,7 +143,7 @@ public class PermissionService {
                 grantorUserId, permissionCode, targetTenantId);
 
         // SuperAdmin can grant any permission
-        if (hasPermission(grantorUserId, "SUPER_ADMIN", null)) {
+        if (hasPermission(grantorUserId, "SUPER_ADMIN", targetTenantId)) {
             return true;
         }
 
@@ -174,7 +174,7 @@ public class PermissionService {
         }
 
         // SuperAdmin can access all tenants
-        if (hasPermission(userId, "SUPER_ADMIN", null)) {
+        if (hasPermission(userId, "SUPER_ADMIN", tenantId)) {
             return true;
         }
 
@@ -327,11 +327,37 @@ public class PermissionService {
         return manager.getTenantId() != null &&
                 manager.getTenantId().equals(target.getTenantId());
     }
-    public Set<Permission> findAllByIds(Set<UUID> ids) {
-        Set<Permission> permissions = permissionRepository.findAllByIdIn(ids);
-        if (permissions.size() != ids.size()) {
-            throw new EntityNotFoundException("One or more permissions not found");
-        }
-        return permissions;
+    public Set<Permission> validateAndFindAllByIds(Set<UUID> ids, User user) {
+    Set<Permission> permissions = permissionRepository.findAllByIdIn(ids);
+
+    // Convert user's permission codes (or IDs) to a comparable set
+    Set<UUID> currentUserPermissionIds = extractUserPermissions(user)
+            .stream()
+            .map(UUID::fromString)
+            .collect(Collectors.toSet());
+
+    //  Validate all requested permissions exist
+    if (permissions.size() != ids.size()) {
+        throw new EntityNotFoundException("One or more permissions not found");
     }
+
+    //  Prevent assigning SUPER_ADMIN
+    boolean hasSuperAdmin = permissions.stream()
+            .anyMatch(p -> "SUPER_ADMIN".equalsIgnoreCase(p.getCode()));
+    if (hasSuperAdmin) {
+        throw new SecurityException("Cannot assign SUPER_ADMIN permission");
+    }
+
+    //  Check for permissions user doesn’t have
+    boolean containsUnownedPermission = permissions.stream()
+            .map(Permission::getId)
+            .anyMatch(id -> !currentUserPermissionIds.contains(id));
+
+    if (containsUnownedPermission) {
+        throw new SecurityException("Cannot assign permissions you do not have");
+    }
+
+    return permissions;
+}
+ 
 }

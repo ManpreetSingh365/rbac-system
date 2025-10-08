@@ -1,6 +1,7 @@
 package com.fleetmanagement.controller;
 
 import com.fleetmanagement.dto.request.VehicleRequestDto;
+import com.fleetmanagement.dto.response.UserLoginResponse;
 import com.fleetmanagement.dto.response.VehicleResponseDto;
 import com.fleetmanagement.entity.Vehicle;
 import com.fleetmanagement.service.VehicleService;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -30,8 +32,12 @@ public class VehicleController {
 
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_CREATE')")
-    public ResponseEntity<VehicleResponseDto> createVehicle(@Valid @RequestBody VehicleRequestDto requestDto) {
-        VehicleResponseDto responseDto = vehicleService.createVehicle(requestDto);
+    public ResponseEntity<VehicleResponseDto> createVehicle(
+        @Valid @RequestBody VehicleRequestDto requestDto,
+        @AuthenticationPrincipal UserLoginResponse currentUser) {
+        UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
+        VehicleResponseDto responseDto = vehicleService.createVehicle(requestDto, tenantId  , currentUserId);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
@@ -39,22 +45,28 @@ public class VehicleController {
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_UPDATE')")
     public ResponseEntity<VehicleResponseDto> updateVehicle(
             @PathVariable UUID id,
-            @Valid @RequestBody VehicleRequestDto requestDto) {
-        VehicleResponseDto responseDto = vehicleService.updateVehicle(id, requestDto);
+            @Valid @RequestBody VehicleRequestDto requestDto,
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+        UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
+        VehicleResponseDto responseDto = vehicleService.updateVehicle(id, requestDto, tenantId, currentUserId);
         return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_READ')")
-    public ResponseEntity<VehicleResponseDto> getVehicleById(@PathVariable UUID id) {
-        VehicleResponseDto responseDto = vehicleService.getVehicleById(id);
+    public ResponseEntity<VehicleResponseDto> getVehicleById(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal UserLoginResponse currentUser) {
+        UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
+        VehicleResponseDto responseDto = vehicleService.getVehicleById(id, tenantId, currentUserId);
         return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_READ')")
-    public ResponseEntity<Page<VehicleResponseDto>> getAllVehicles(
-            @RequestParam(required = false) UUID tenantId,
+    public ResponseEntity<Page<VehicleResponseDto>> getAllVehicles(            
             @RequestParam(required = false) Vehicle.VehicleStatus status,
             @RequestParam(required = false) UUID fleetId,
             @RequestParam(required = false) String brand,
@@ -62,16 +74,23 @@ public class VehicleController {
             @RequestParam(required = false) Vehicle.VehicleType vehicleType,
             @RequestParam(required = false) Integer startYear,
             @RequestParam(required = false) Integer endYear,
-            @ParameterObject Pageable pageable) {
+            @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserLoginResponse currentUser) {
+        UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         Page<VehicleResponseDto> vehicles = vehicleService.getAllVehicles(
-                tenantId, status, fleetId, brand, model, vehicleType, startYear, endYear, pageable);
+                currentUserId,tenantId, status, fleetId, brand, model, vehicleType, startYear, endYear, pageable);
         return ResponseEntity.ok(vehicles);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'VEHICLE_DELETE')")
-    public ResponseEntity<Void> deleteVehicle(@PathVariable UUID id) {
-        vehicleService.deleteVehicle(id);
+    public ResponseEntity<Void> deleteVehicle(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal UserLoginResponse currentUser) {
+        UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
+        vehicleService.deleteVehicle(id, tenantId, currentUserId);
         return ResponseEntity.noContent().build();
     }
 }

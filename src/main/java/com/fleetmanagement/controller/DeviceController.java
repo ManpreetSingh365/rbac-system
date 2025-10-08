@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +38,8 @@ public class DeviceController {
             @Valid @RequestBody DeviceRequestDto requestDto,
             @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
-        DeviceResponseDto responseDto = deviceService.createDevice(currentUserId, requestDto);
+        UUID tenandId = currentUser.getTenantId();
+        DeviceResponseDto responseDto = deviceService.createDevice(currentUserId, requestDto, tenandId);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
@@ -50,7 +50,8 @@ public class DeviceController {
             @Valid @RequestBody DeviceRequestDto requestDto,
             @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
-        DeviceResponseDto responseDto = deviceService.updateDevice(currentUserId, id, requestDto);
+        UUID tenandId = currentUser.getTenantId();
+        DeviceResponseDto responseDto = deviceService.updateDevice(currentUserId, id, requestDto, tenandId);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -68,8 +69,7 @@ public class DeviceController {
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN','DEVICE_READ')")
     public ResponseEntity<Page<DeviceResponseDto>> getAllDevices(
             @RequestParam(required = false) String imei,
-            @RequestParam(required = false) Device.DeviceStatus status,
-            @RequestParam(required = false) UUID tenantId,
+            @RequestParam(required = false) Device.DeviceStatus status,            
             @RequestParam(required = false) String deviceModel,
             @RequestParam(required = false) String installerPhone,
             @RequestParam(required = false) UUID vehicleId,
@@ -82,6 +82,7 @@ public class DeviceController {
             @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         Page<DeviceResponseDto> devices = deviceService.getAllDevices(
                 currentUserId, imei, status, tenantId, deviceModel, installerPhone, vehicleId,
                 assignedUserId, registeredBySms, lastHeartbeatBefore, expiryBefore,

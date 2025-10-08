@@ -36,7 +36,8 @@ public class RoleController {
     public ResponseEntity<RoleResponseDto> createRole(@Valid @RequestBody RoleRequestDto requestDto,
         @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
-        RoleResponseDto responseDto = roleService.createRole(currentUserId, requestDto);
+        UUID tenantId = currentUser.getTenantId();
+        RoleResponseDto responseDto = roleService.createRole(currentUserId, requestDto, tenantId);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
@@ -46,7 +47,8 @@ public class RoleController {
       @Valid @RequestBody RoleRequestDto requestDto,
       @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
-        RoleResponseDto responseDto = roleService.updateRole(currentUserId, id, requestDto);
+        UUID tenantId = currentUser.getTenantId();
+        RoleResponseDto responseDto = roleService.updateRole(currentUserId, id, requestDto, tenantId);
         return ResponseEntity.ok(responseDto);
     }
 
@@ -55,18 +57,19 @@ public class RoleController {
     public ResponseEntity<RoleResponseDto> getRoleById(@PathVariable UUID id,
          @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         RoleResponseDto responseDto = roleService.getRoleById(currentUserId, id);
         return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ROLE_READ')")
-    public ResponseEntity<Page<RoleResponseDto>> getAllRoles(
-            @RequestParam(required = false) UUID tenantId,
-            @RequestParam(required = false) Role.ScopeType scopeType,
+    public ResponseEntity<Page<RoleResponseDto>> getAllRoles(            
+            @RequestParam(defaultValue = "TENANT") Role.ScopeType scopeType,
             @AuthenticationPrincipal UserLoginResponse currentUser,
             @ParameterObject Pageable pageable) {
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         Page<RoleResponseDto> roles = roleService.getAllRoles(currentUserId, tenantId, scopeType, pageable);
         return ResponseEntity.ok(roles);
     }
@@ -76,18 +79,19 @@ public class RoleController {
     public ResponseEntity<Void> deleteRole(@PathVariable UUID id,
      @AuthenticationPrincipal UserLoginResponse currentUser) {
         UUID currentUserId = currentUser.getId();
+        UUID tenantId = currentUser.getTenantId();
         roleService.deleteRole(currentUserId, id);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping(value = "/{id}/permissions", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ASSIGN_PERMISSION')")
-    public ResponseEntity<RoleResponseDto> updatePermissions(
-            @PathVariable UUID id,
-            @RequestBody Set<UUID> permissionIds,
-            @AuthenticationPrincipal UserLoginResponse currentUser) {
-        UUID currentUserId = currentUser.getId();
-        RoleResponseDto responseDto = roleService.updatePermissions(currentUserId, id, permissionIds);
-        return ResponseEntity.ok(responseDto);
-    }
+    // @PatchMapping(value = "/{id}/permissions", produces = MediaType.APPLICATION_JSON_VALUE)
+    // @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ASSIGN_PERMISSION')")
+    // public ResponseEntity<RoleResponseDto> updatePermissions(
+    //         @PathVariable UUID id,
+    //         @RequestBody Set<UUID> permissionIds,
+    //         @AuthenticationPrincipal UserLoginResponse currentUser) {
+    //     UUID currentUserId = currentUser.getId();
+    //     RoleResponseDto responseDto = roleService.updatePermissions(currentUserId, id, permissionIds);
+    //     return ResponseEntity.ok(responseDto);
+    // }
 }
