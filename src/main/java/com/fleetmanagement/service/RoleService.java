@@ -4,6 +4,7 @@ import com.fleetmanagement.dto.request.RoleRequestDto;
 import com.fleetmanagement.dto.response.RoleResponseDto;
 import com.fleetmanagement.entity.Permission;
 import com.fleetmanagement.entity.User;
+import com.fleetmanagement.entity.type.RoleScope;
 import com.fleetmanagement.entity.Role;
 import com.fleetmanagement.exception.ResourceNotFoundException;
 import com.fleetmanagement.mapper.RoleMapper;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fleetmanagement.entity.type.RoleScope;
 
 import java.util.Optional;
 import java.util.Set;
@@ -82,12 +84,12 @@ public class RoleService {
         return  roleMapper.toResponseDto(role);
     }
 
-    public Page<RoleResponseDto> getAllRoles(UUID currentUserId,UUID tenantId, Role.ScopeType scopeType, Pageable pageable) {
+    public Page<RoleResponseDto> getAllRoles(UUID currentUserId,UUID tenantId, RoleScope scopeType, Pageable pageable) {
         Page<Role> roles;
 
         validateReadRequest(currentUserId, tenantId, scopeType);
 
-        roles = roleRepository.findByTenantIdAndScopeTypeAndActiveTrue(tenantId, scopeType, pageable);
+        roles = roleRepository.findByTenantIdAndRoleScopeAndActiveTrue(tenantId, scopeType, pageable);
         // if (tenantId != null && scopeType != null) {
         //     roles = roleRepository.findByTenantIdAndScopeTypeAndActiveTrue(tenantId, scopeType, pageable);
         // } else if (tenantId != null) {
@@ -97,6 +99,7 @@ public class RoleService {
         // } else {
         //     roles = roleRepository.findByActiveTrue(pageable);
         // }
+
 
         return roles.map(roleMapper::toResponseDto);
     }
@@ -132,15 +135,16 @@ public class RoleService {
             throw new IllegalArgumentException("Tenant Scope failed");
         }
 
-        if (requestDto.getScopeType() == Role.ScopeType.TENANT && tenantId == null) {
+        if (requestDto.getRoleScope() == RoleScope.TENANT && tenantId == null) {
             throw new IllegalArgumentException("Tenant ID is required for TENANT scope roles");
         }
-        if (requestDto.getScopeType() == Role.ScopeType.GLOBAL && tenantId != null) {
+        if (requestDto.getRoleScope() == RoleScope.GLOBAL && tenantId != null) {
+
             throw new IllegalArgumentException("Tenant ID must be null for GLOBAL scope roles");
         }
     }
 
-    private void validateReadRequest(UUID currentUserId, UUID tenantId, Role.ScopeType scopeType) {
+    private void validateReadRequest(UUID currentUserId, UUID tenantId,  RoleScope scopeType) {
 
 
         User currentUser = userRepository.findById(currentUserId)
@@ -150,7 +154,7 @@ public class RoleService {
            throw new IllegalArgumentException("Tenant ID is required");
        }
 
-         if (scopeType == Role.ScopeType.GLOBAL && tenantId != null) {
+         if (scopeType == RoleScope.GLOBAL && tenantId != null) {
               throw new IllegalArgumentException("Tenant ID must be null for GLOBAL scope roles");
          }
     }

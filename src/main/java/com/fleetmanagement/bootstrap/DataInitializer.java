@@ -3,6 +3,7 @@ package com.fleetmanagement.bootstrap;
 import com.fleetmanagement.entity.Permission;
 import com.fleetmanagement.entity.Role;
 import com.fleetmanagement.entity.User;
+import com.fleetmanagement.entity.type.RoleScope;
 import com.fleetmanagement.repository.PermissionRepository;
 import com.fleetmanagement.repository.RoleRepository;
 import com.fleetmanagement.repository.UserRepository;
@@ -10,11 +11,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.expression.spel.ast.Assign;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,22 +34,26 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UUID tenantId = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
+    private final UUID tenantId = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");     
+    private final UUID createdBy = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
+    private final UUID modifiedBy = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
 
     @Override
     @Transactional
-    public void run(String... args) {
-        log.info("Starting data initialization...");
+ public void run(String... args) {
+    log.info("Starting data initialization...");
 
-        if (permissionRepository.count() == 0) {
-            createPermissions();
-            createRoles();
-            createSuperAdmin();
-            log.info("Data initialization completed successfully");
-        } else {
-            log.info("Data already initialized, skipping...");
-        }
+    if (permissionRepository.count() == 0) {
+        createPermissions();
+        log.info("Created {} permissions", permissionRepository.count());
+    } else {
+        log.info("Permissions already exist, skipping permission creation...");
     }
+
+    createRoles();
+    createSuperAdmin();
+    log.info("Data initialization completed successfully");
+}
 
     /**
      * Create essential permissions based on streamlined RBAC model
@@ -82,7 +87,7 @@ public class DataInitializer implements CommandLineRunner {
         createPermission("ROLE_CREATE", "Create Role",
                 "Create new roles", Permission.PermissionCategory.USER_MANAGEMENT);
         createPermission("ROLE_DELETE", "Delete Role",
-                "Delete existing roles", Permission.PermissionCategory.USER_MANAGEMENT);        
+                "Delete existing roles", Permission.PermissionCategory.USER_MANAGEMENT);
 
         // Device Management
         createPermission("DEVICE_READ", "Read Device",
@@ -91,13 +96,11 @@ public class DataInitializer implements CommandLineRunner {
                 "Add new devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_ASSIGN", "Assign Device",
                 "Assign devices to vehicles/users", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_UPDATE", "Update Device",
+        createPermission("DEVICE_ACTIVATE", "Activate Device",
                 "Enable/disable devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_REMOTE_CONFIG", "Remote Configuration",
                 "Push configuration updates", Permission.PermissionCategory.DEVICE_MANAGEMENT);
         createPermission("DEVICE_BULK_OPERATIONS", "Bulk Operations",
-                "Mass device operations", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_DELETE", "Delete Device",
                 "Mass device operations", Permission.PermissionCategory.DEVICE_MANAGEMENT);
 
         // Vehicle Management
@@ -111,10 +114,6 @@ public class DataInitializer implements CommandLineRunner {
                 "Connect devices to vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
         createPermission("FLEET_MANAGE", "Fleet Management",
                 "Organize vehicle groups", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("VEHICLE_ASSIGN",  "Assign Vehicle to users",
-                "Organize vehicle groups", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("VEHICLE_DELETE", "Delete Vehicle",
-                "Remove vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
 
         // Location & Tracking
         createPermission("VIEW_LOCATION_LIVE", "Live Location",
@@ -159,12 +158,31 @@ public class DataInitializer implements CommandLineRunner {
     private void createRoles() {
         log.info("Creating essential roles...");
 
-        // SuperAdmin Role - All permissions
-        Role superAdminRole = createRole("SuperAdmin", "Super Administrator with complete system access");
-        superAdminRole.setPermissions(getPermissionsByCode("SUPER_ADMIN"));
-        roleRepository.save(superAdminRole);
+        Role superAdminRole = roleRepository.findByName("superadmin")
+            .orElseGet(() -> {
+                log.info("No superadmin role found, creating new role...");
+                Role role = createRole("superadmin", "Super Administrator with complete system access");
+                role.setPermissions(Set.copyOf(permissionRepository.findAll()));
+                return roleRepository.insertRoleWithConflictHandling(
+                        role.isActive(),
+                        new Timestamp(System.currentTimeMillis()),
+                        role.getCreatedBy(),
+                        role.getDescription(),
+                        role.getModifiedBy(),
+                        role.getName(),
+                        role.getRoleScope().name(),
+                        role.getTenantId(),
+                        new Timestamp(System.currentTimeMillis()),
+                        UUID.randomUUID()
+                ).orElseGet(() -> {
+                    log.info("Role creation conflicted, retrieving existing superadmin role...");
+                    return roleRepository.findByName("superadmin").orElseThrow(() -> 
+                        new IllegalStateException("Failed to create or find superadmin role"));
+                });
+            });
 
-        // TenantAdmin Role - Comprehensive tenant management
+    // TenantAdmin Role - Comprehensive tenant management
+    if (roleRepository.findByName("TenantAdmin").isEmpty()) {
         Role tenantAdminRole = createRole("TenantAdmin", "Tenant administrator with user and resource management");
         tenantAdminRole.setPermissions(getPermissionsByCode(
                 "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE", "USER_RESET_PASSWORD",
@@ -177,8 +195,11 @@ public class DataInitializer implements CommandLineRunner {
                 "AUDIT_READ", "BILLING_VIEW"
         ));
         roleRepository.save(tenantAdminRole);
-
-        // FleetManager Role - Fleet operations
+        log.info("TenantAdmin role created successfully");
+    } else {
+        log.info("TenantAdmin role already exists");
+    }
+    if (roleRepository.findByName("FleetManager").isEmpty()) {
         Role fleetManagerRole = createRole("FleetManager", "Fleet manager with vehicle and tracking access");
         fleetManagerRole.setPermissions(getPermissionsByCode(
                 "VEHICLE_READ", "VEHICLE_UPDATE", "VEHICLE_ASSIGN_DEVICE", "FLEET_MANAGE",
@@ -188,27 +209,77 @@ public class DataInitializer implements CommandLineRunner {
                 "REPORT_VIEW", "REPORT_GENERATE", "ANALYTICS_ACCESS"
         ));
         roleRepository.save(fleetManagerRole);
+        log.info("FleetManager role created successfully");
+    } else {
+        log.info("FleetManager role already exists");
+    }
 
-        // Dispatcher Role - Operations focused
+    // TenantAdmin Role - Comprehensive tenant management
+    if (roleRepository.findByName("Dispatcher").isEmpty()) {
         Role dispatcherRole = createRole("Dispatcher", "Dispatcher with live tracking and communication");
         dispatcherRole.setPermissions(getPermissionsByCode(
                 "VIEW_LOCATION_LIVE", "ALERT_READ", "NOTIFICATION_SEND", "VEHICLE_READ"
         ));
         roleRepository.save(dispatcherRole);
+        log.info("Dispatcher role created successfully");
+    } else {
+        log.info("Dispatcher role already exists");
+    }
 
-        // Installer Role - Device installation
+    if (roleRepository.findByName("Installer").isEmpty()) {
         Role installerRole = createRole("Installer", "Device installer with registration permissions");
         installerRole.setPermissions(getPermissionsByCode(
                 "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE", "VEHICLE_ASSIGN_DEVICE"
         ));
         roleRepository.save(installerRole);
+        log.info("Installer role created successfully");
+    } else {
+        log.info("Installer role already exists");
+    }
 
-        // Viewer Role - Read-only access
+    // TenantAdmin Role - Comprehensive tenant management
+    if (roleRepository.findByName("Viewer").isEmpty()) {
         Role viewerRole = createRole("Viewer", "Read-only access to tracking and reports");
         viewerRole.setPermissions(getPermissionsByCode(
                 "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "VEHICLE_READ", "REPORT_VIEW"
         ));
         roleRepository.save(viewerRole);
+        log.info("Viewer role created successfully");
+    } else {
+        log.info("Viewer role already exists");
+    }
+
+        // // FleetManager Role - Fleet operations
+        // Role fleetManagerRole = createRole("FleetManager", "Fleet manager with vehicle and tracking access");
+        // fleetManagerRole.setPermissions(getPermissionsByCode(
+        //         "VEHICLE_READ", "VEHICLE_UPDATE", "VEHICLE_ASSIGN_DEVICE", "FLEET_MANAGE",
+        //         "DEVICE_READ", "DEVICE_ASSIGN",
+        //         "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "EXPORT_LOCATION", "GEOFENCE_MANAGE",
+        //         "ALERT_READ", "ALERT_MANAGE",
+        //         "REPORT_VIEW", "REPORT_GENERATE", "ANALYTICS_ACCESS"
+        // ));
+        // roleRepository.save(fleetManagerRole);
+
+        // Dispatcher Role - Operations focused
+        // Role dispatcherRole = createRole("Dispatcher", "Dispatcher with live tracking and communication");
+        // dispatcherRole.setPermissions(getPermissionsByCode(
+        //         "VIEW_LOCATION_LIVE", "ALERT_READ", "NOTIFICATION_SEND", "VEHICLE_READ"
+        // ));
+        // roleRepository.save(dispatcherRole);
+
+        // Installer Role - Device installation
+        // Role installerRole = createRole("Installer", "Device installer with registration permissions");
+        // installerRole.setPermissions(getPermissionsByCode(
+        //         "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE", "VEHICLE_ASSIGN_DEVICE"
+        // ));
+        // roleRepository.save(installerRole);
+
+        // Viewer Role - Read-only access
+        // Role viewerRole = createRole("Viewer", "Read-only access to tracking and reports");
+        // viewerRole.setPermissions(getPermissionsByCode(
+        //         "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "VEHICLE_READ", "REPORT_VIEW"
+        // ));
+        // roleRepository.save(viewerRole);
 
         log.info("Created {} roles", roleRepository.count());
     }
@@ -216,30 +287,51 @@ public class DataInitializer implements CommandLineRunner {
     /**
      * Create SuperAdmin user - FIXED: Added username field
      */
-    private void createSuperAdmin() {
-        log.info("Creating SuperAdmin user...");
+private void createSuperAdmin() {
+    log.info("Creating superadmin user...");
 
-        // FIXED: Check by username instead of email
-        if (userRepository.findByUsernameAndActiveTrue("superadmin").isEmpty()) {
-            Role superAdminRole = roleRepository.findByName("SuperAdmin").orElseThrow();                
-            User superAdmin = User.builder()
-                    .username("superadmin")  // FIXED: Added missing username field
-                    .email("superadmin@fleetmanagement.com")
-                    .firstName("Super")
-                    .lastName("Admin")
-                    .password(passwordEncoder.encode("SuperAdmin@123"))
-                    .phoneNumber("+1234567890")
-                    .tenantId(tenantId)
-                    .active(true)
-                    .roles(Set.of(superAdminRole))
-                    .build();
+    if (userRepository.findByUsernameAndActiveTrue("superadmin").isEmpty()) {
+        Role superAdminRole = roleRepository.findByName("superadmin")
+                .orElseGet(() -> {
+                    log.info("No superadmin role found, creating new role...");
+                    Role role = createRole("superadmin", "Super Administrator with complete system access");
+                    role.setPermissions(Set.copyOf(permissionRepository.findAll()));
+                    return roleRepository.insertRoleWithConflictHandling(
+                            role.isActive(),
+                            new Timestamp(System.currentTimeMillis()),
+                            role.getCreatedBy(),
+                            role.getDescription(),
+                            role.getModifiedBy(),
+                            role.getName(),
+                            role.getRoleScope().name(),
+                            role.getTenantId(),
+                            new Timestamp(System.currentTimeMillis()),
+                            UUID.randomUUID()
+                    ).orElseGet(() -> {
+                        log.info("Role creation conflicted, retrieving existing superadmin role...");
+                        return roleRepository.findByName("superadmin").orElseThrow(() -> 
+                            new IllegalStateException("Failed to create or find superadmin role"));
+                    });
+                });
 
-            userRepository.save(superAdmin);
-            log.info("SuperAdmin user created successfully with username: superadmin");
-        } else {
-            log.info("SuperAdmin user already exists");
-        }
+        User superAdmin = User.builder()
+                .username("superadmin")
+                .email("superadmin@fleetmanagement.com")
+                .firstName("Super")
+                .lastName("Admin")
+                .password(passwordEncoder.encode("SuperAdmin@123"))
+                .phoneNumber("+1234567890")
+                .tenantId(tenantId)
+                .active(true)
+                .roles(Set.of(superAdminRole))
+                .build();
+
+        userRepository.save(superAdmin);
+        log.info("superadmin user created successfully with username: superadmin");
+    } else {
+        log.info("superadmin user already exists");
     }
+}
 
     /**
      * Helper method to create permission
@@ -265,8 +357,10 @@ public class DataInitializer implements CommandLineRunner {
                 .name(name)
                 .description(description)
                 .active(true)
+                .createdBy(createdBy)
+                .modifiedBy(modifiedBy)
                 .tenantId(tenantId)
-                .scopeType(Role.ScopeType.TENANT)                
+                .roleScope(RoleScope.TENANT)                
                 .build();
     }
 

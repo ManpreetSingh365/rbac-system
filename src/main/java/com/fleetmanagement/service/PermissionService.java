@@ -225,7 +225,7 @@ public class PermissionService {
         }
 
         return user.getRoles().stream()
-                .filter(Role::getActive)
+                .filter(Role::isActive)
                 .flatMap(role -> role.getPermissions().stream())
                 .filter(Permission::getActive)
                 .anyMatch(permission -> "SUPER_ADMIN".equals(permission.getCode()));
@@ -241,7 +241,7 @@ public class PermissionService {
         }
 
         return user.getRoles().stream()
-                .filter(Role::getActive) // Only active roles
+                .filter(Role::isActive) // Only active roles
                 .flatMap(role -> {
                     if (role.getPermissions() == null) {
                         return java.util.stream.Stream.empty();

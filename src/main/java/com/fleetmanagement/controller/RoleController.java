@@ -3,7 +3,7 @@ package com.fleetmanagement.controller;
 import com.fleetmanagement.dto.request.RoleRequestDto;
 import com.fleetmanagement.dto.response.RoleResponseDto;
 import com.fleetmanagement.dto.response.UserLoginResponse;
-import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
 import com.fleetmanagement.service.RoleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.fleetmanagement.entity.type.RoleScope;
 
 import java.util.Set;
 import java.util.UUID;
@@ -65,7 +66,7 @@ public class RoleController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAnyAuthority('SUPER_ADMIN', 'ROLE_READ')")
     public ResponseEntity<Page<RoleResponseDto>> getAllRoles(            
-            @RequestParam(defaultValue = "TENANT") Role.ScopeType scopeType,
+            @RequestParam(defaultValue = "TENANT") RoleScope scopeType,
             @AuthenticationPrincipal UserLoginResponse currentUser,
             @ParameterObject Pageable pageable) {
         UUID currentUserId = currentUser.getId();

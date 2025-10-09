@@ -1,9 +1,12 @@
 package com.fleetmanagement.config;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,26 +15,28 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.modelmapper.Converter;
 
-import java.util.Set;
-
 /**
  * Application Configuration
- * Updated: Removed Redis Cache configuration as per requirements
- * Configures ModelMapper and Security components only
+ * Enhanced CORS configuration for cookie support across origins
  */
 @Configuration
 public class AppConfig {
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000")
-                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                registry.addMapping("/api/**")
+                        .allowedOriginPatterns(frontendUrl, "http://localhost:*") // Support any localhost port
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .exposedHeaders("Set-Cookie", "Authorization") // Expose cookie headers
+                        .allowCredentials(true)
+                        .maxAge(3600); // Cache preflight for 1 hour
             }
         };
     }

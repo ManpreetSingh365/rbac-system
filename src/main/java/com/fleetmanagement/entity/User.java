@@ -5,8 +5,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-
+import org.hibernate.type.SqlTypes;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,110 +20,148 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
- * User Entity - Represents system users with roles and permissions
- * Updated: Changed email to username, made email optional
- * Optimized for high scalability with proper indexing and caching
+ * Modern, production-ready User entity.
+ * Features:
+ * - UUID primary key
+ * - Equals/hashCode on ID only
+ * - Lazy Many-to-Many collections
+ * - Validations
+ * - Safe toString (collections excluded)
+ * - Automatic auditing
  */
 @Entity
 @Table(name = "users", indexes = {
-        @Index(name = "idx_user_username", columnList = "username"),
-        @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_active", columnList = "active"),
-        @Index(name = "idx_user_tenant", columnList = "tenant_id")
+                @Index(name = "idx_user_username", columnList = "username", unique = true),
+                @Index(name = "idx_user_email", columnList = "email"),
+                @Index(name = "idx_user_active_tenant", columnList = "active, tenant_id"),
+                @Index(name = "idx_user_last_login", columnList = "last_login")
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// @EntityListeners(AuditingEntityListener.class)
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id")
-    private UUID id;
+        // =======================
+        // Primary Key
+        // =======================
+        @Id
+        @GeneratedValue(strategy = GenerationType.UUID)
+        @JdbcTypeCode(SqlTypes.UUID)
+        @EqualsAndHashCode.Include
+        @ToString.Include
+        private UUID id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String username;  // Changed from email to username
+        // =======================
+        // Basic Info
+        // =======================
+        @NotBlank
+        @Size(min = 3, max = 100)
+        @Column(nullable = false, unique = true, length = 100)
+        @ToString.Include
+        private String username;
 
-    @Column(nullable = true, length = 100)  // Made email optional
-    private String email;
+        @Email
+        @Column(length = 100)
+        @ToString.Include
+        private String email;
 
-    @Column(nullable = false, length = 100)
-    private String firstName;
+        @NotBlank
+        @Size(max = 100)
+        @Column(nullable = false, length = 100)
+        private String firstName;
 
-    @Column(nullable = false, length = 100)
-    private String lastName;
+        @NotBlank
+        @Size(max = 100)
+        @Column(nullable = false, length = 100)
+        private String lastName;
 
-    @Column(nullable = false)
-    private String password;
+        @JsonIgnore
+        @NotBlank
+        @Column(nullable = false, length = 255)
+        private String password;
 
-    @Column(nullable = false, length = 15)
-    private String phoneNumber;
+        @Pattern(regexp = "^\\+?[1-9]\\d{9,14}$", message = "Invalid phone number format")
+        @Column(nullable = false, length = 15)
+        private String phoneNumber;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Boolean active = true;
+        @Builder.Default
+        @Column(nullable = false)
+        private Boolean active = true;
 
-    @Column(name = "tenant_id")
-    private UUID tenantId;
+        private UUID tenantId;
+        private LocalDateTime lastLogin;
 
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
+        // =======================
+        // Auditing
+        // =======================
+        @CreationTimestamp
+        @Column(name = "created_at", nullable = false, updatable = false)
+        private LocalDateTime createdAt;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+        @UpdateTimestamp
+        @Column(name = "updated_at")
+        private LocalDateTime updatedAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+        private UUID createdBy;
+        private UUID modifiedBy;
 
-    @Column(name = "created_by")
-    private UUID createdBy;
+        // =======================
+        // Relations
+        // =======================
+        @JsonIgnore
+        @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+        @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+        private Set<Role> roles;
 
-    @Column(name = "modified_by")
-    private UUID modifiedBy;
+        @JsonIgnore
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JoinTable(name = "user_devices", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "device_id"))
+        private Set<Device> devices;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-      @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Set<Role> roles;
+        @JsonIgnore
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JoinTable(name = "user_vehicles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "vehicle_id"))
+        private Set<Vehicle> vehicles;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "user_devices",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "device_id")
-    )
-        @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Set<Device> devices;
+        // =======================
+        // Lifecycle Hooks
+        // =======================
+        @PrePersist
+        @PreUpdate
+        private void normalize() {
+                if (username != null)
+                        username = username.trim().toLowerCase();
+                if (email != null)
+                        email = email.trim().toLowerCase();
+        }
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "user_vehicles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "vehicle_id")
-    )
-      @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Set<Vehicle> vehicles;
-
-    public String getFullName() {
-        return firstName + " " + lastName;
-    }
+        // =======================
+        // Transient / Derived Fields
+        // =======================
+        @Transient
+        public String getFullName() {
+                return firstName + " " + lastName;
+        }
 }

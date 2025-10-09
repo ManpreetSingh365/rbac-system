@@ -1,6 +1,8 @@
 package com.fleetmanagement.dto.response;
 
 import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -18,7 +20,7 @@ public class RoleResponseDto {
     private String description;
     private Boolean active;
     private UUID tenantId;
-    private Role.ScopeType scopeType;
+    private RoleScope roleScope;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UUID createdBy;

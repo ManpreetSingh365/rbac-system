@@ -1,6 +1,8 @@
 package com.fleetmanagement.repository;
 
 import com.fleetmanagement.entity.Role;
+import com.fleetmanagement.entity.type.RoleScope;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -65,7 +68,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     /**
      * Find roles by scope type
      */
-    Page<Role> findByScopeTypeAndActiveTrue(Role.ScopeType scopeType, Pageable pageable);
+    Page<Role> findByRoleScopeAndActiveTrue(RoleScope roleScope, Pageable pageable);
 
     /**
      * Find roles assigned to specific user
@@ -87,5 +90,22 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     /**
      * Find roles by tenant ID and scope type with active status
      */
-    Page<Role> findByTenantIdAndScopeTypeAndActiveTrue(@Param("tenantId") UUID tenantId, @Param("scopeType") Role.ScopeType scopeType, Pageable pageable);
+    Page<Role> findByTenantIdAndRoleScopeAndActiveTrue(@Param("tenantId") UUID tenantId, @Param("role_scope")RoleScope roleScope, Pageable pageable);
+
+
+    @Query(value = "INSERT INTO roles (active, created_at, created_by, description, modified_by, name, role_scope, tenant_id, updated_at, id) " +
+                   "VALUES (:active, :createdAt, :createdBy, :description, :modifiedBy, :name, :roleScope, :tenantId, :updatedAt, :id) " +
+                   "ON CONFLICT (name) DO NOTHING RETURNING *", nativeQuery = true)
+    Optional<Role> insertRoleWithConflictHandling(
+            @Param("active") boolean active,
+            @Param("createdAt") Timestamp createdAt,
+            @Param("createdBy") UUID createdBy,
+            @Param("description") String description,
+            @Param("modifiedBy") UUID modifiedBy,
+            @Param("name") String name,
+            @Param("roleScope") String roleScope,
+            @Param("tenantId") UUID tenantId,
+            @Param("updatedAt") Timestamp updatedAt,
+            @Param("id") UUID id
+    );
 }

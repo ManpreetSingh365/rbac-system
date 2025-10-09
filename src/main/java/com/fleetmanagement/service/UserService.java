@@ -286,7 +286,7 @@ public class UserService {
             Role role = roleRepository.findById(roleId)
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + roleId));
 
-            if (!role.getActive()) {
+            if (!role.isActive()) {
                 throw new IllegalStateException("Cannot assign inactive role: " + role.getName());
             }
 
