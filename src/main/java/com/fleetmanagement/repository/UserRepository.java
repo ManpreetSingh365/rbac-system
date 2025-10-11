@@ -29,7 +29,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Find user by email (optional field now)
      */
     Optional<User> findByEmailAndActiveTrue(String email);
+    
+    
+    Optional<User> findByEmailIgnoreCase(String email);
 
+    
     /**
      * Check if user exists by username
      */

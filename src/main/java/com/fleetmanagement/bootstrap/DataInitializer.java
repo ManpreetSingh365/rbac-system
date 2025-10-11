@@ -2,372 +2,160 @@ package com.fleetmanagement.bootstrap;
 
 import com.fleetmanagement.entity.Permission;
 import com.fleetmanagement.entity.Role;
-import com.fleetmanagement.entity.User;
 import com.fleetmanagement.entity.type.RoleScope;
+import com.fleetmanagement.entity.User;
 import com.fleetmanagement.repository.PermissionRepository;
 import com.fleetmanagement.repository.RoleRepository;
 import com.fleetmanagement.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
-/**
- * Data Initialization Component - FIXED
- * Creates essential permissions, roles, and SuperAdmin user on startup
- * FIXED: Username field was null in SuperAdmin creation
- */
-@Component
-@ConditionalOnProperty(name="app.data-init.enabled", havingValue="true", matchIfMissing=true)
-@RequiredArgsConstructor
 @Slf4j
-public class DataInitializer implements CommandLineRunner {
+@Component
+@RequiredArgsConstructor
+public class DataInitializer {
 
     private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UUID tenantId = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");     
-    private final UUID createdBy = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
-    private final UUID modifiedBy = UUID.fromString("b0accb3b-37e2-4a80-ba00-583eefa8b664");
 
-    @Override
+    // ---- 1️⃣ Master list of permissions ----
+    private static final List<String> ALL_PERMISSIONS = List.of(
+            "VEHICLE_ASSIGN_DEVICE", "BILLING_VIEW", "DEVICE_READ", "REPORT_GENERATE", "SYSTEM_CONFIG_READ",
+            "VIEW_LOCATION_HISTORY", "ROLE_DELETE", "DEVICE_ACTIVATE", "USER_CREATE", "USER_RESET_PASSWORD",
+            "VEHICLE_READ", "GEOFENCE_MANAGE", "VIEW_LOCATION_LIVE", "AUDIT_READ", "ROLE_ASSIGN",
+            "DEVICE_ASSIGN", "USER_READ", "DEVICE_REMOTE_CONFIG", "ROLE_READ", "SYSTEM_MAINTENANCE",
+            "SUPER_ADMIN", "VEHICLE_UPDATE", "MULTI_TENANT_MANAGE", "USER_DELETE", "DEVICE_REGISTER",
+            "ALERT_READ", "USER_UPDATE", "DEVICE_BULK_OPERATIONS", "NOTIFICATION_SEND", "VEHICLE_CREATE",
+            "ALERT_MANAGE", "ANALYTICS_ACCESS", "ROLE_CREATE", "FLEET_MANAGE", "REPORT_VIEW", "EXPORT_LOCATION"
+    );
+
+    // ---- 2️⃣ Initialize data ----
+    @PostConstruct
     @Transactional
- public void run(String... args) {
-    log.info("Starting data initialization...");
-
-    if (permissionRepository.count() == 0) {
-        createPermissions();
-        log.info("Created {} permissions", permissionRepository.count());
-    } else {
-        log.info("Permissions already exist, skipping permission creation...");
+    public void init() {
+        Map<String, Permission> permissionsMap = createPermissions();
+        Map<String, Role> rolesMap = createRoles();
+        syncRolePermissions(rolesMap, permissionsMap);
+        createSuperAdminUser(rolesMap.get("SuperAdmin"));
     }
 
-    createRoles();
-    createSuperAdmin();
-    log.info("Data initialization completed successfully");
-}
-
-    /**
-     * Create essential permissions based on streamlined RBAC model
-     */
-    private void createPermissions() {
-        log.info("Creating essential permissions...");
-
-        // System Administration
-        createPermission("SUPER_ADMIN", "Super Administrator Access",
-                "Complete system access with all permissions", Permission.PermissionCategory.SYSTEM_ADMINISTRATION);
-        createPermission("SYSTEM_MAINTENANCE", "System Maintenance",
-                "Core system operations and maintenance", Permission.PermissionCategory.SYSTEM_ADMINISTRATION);
-        createPermission("MULTI_TENANT_MANAGE", "Multi-Tenant Management",
-                "Cross-tenant operations", Permission.PermissionCategory.SYSTEM_ADMINISTRATION);
-
-        // User Management
-        createPermission("USER_CREATE", "Create User",
-                "Create new users", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("USER_READ", "Read User",
-                "View user information", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("USER_UPDATE", "Update User",
-                "Modify user information", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("USER_DELETE", "Delete User",
-                "Delete users", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("USER_RESET_PASSWORD", "Reset Password",
-                "Reset user passwords", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("ROLE_ASSIGN", "Assign Roles",
-                "Assign roles to users", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("ROLE_READ", "Read Roles",
-                "View role definitions", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("ROLE_CREATE", "Create Role",
-                "Create new roles", Permission.PermissionCategory.USER_MANAGEMENT);
-        createPermission("ROLE_DELETE", "Delete Role",
-                "Delete existing roles", Permission.PermissionCategory.USER_MANAGEMENT);
-
-        // Device Management
-        createPermission("DEVICE_READ", "Read Device",
-                "View device information", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_REGISTER", "Register Device",
-                "Add new devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_ASSIGN", "Assign Device",
-                "Assign devices to vehicles/users", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_ACTIVATE", "Activate Device",
-                "Enable/disable devices", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_REMOTE_CONFIG", "Remote Configuration",
-                "Push configuration updates", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-        createPermission("DEVICE_BULK_OPERATIONS", "Bulk Operations",
-                "Mass device operations", Permission.PermissionCategory.DEVICE_MANAGEMENT);
-
-        // Vehicle Management
-        createPermission("VEHICLE_READ", "Read Vehicle",
-                "View vehicle details", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("VEHICLE_CREATE", "Create Vehicle",
-                "Add vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("VEHICLE_UPDATE", "Update Vehicle",
-                "Modify vehicle information", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("VEHICLE_ASSIGN_DEVICE", "Assign Device to Vehicle",
-                "Connect devices to vehicles", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-        createPermission("FLEET_MANAGE", "Fleet Management",
-                "Organize vehicle groups", Permission.PermissionCategory.VEHICLE_MANAGEMENT);
-
-        // Location & Tracking
-        createPermission("VIEW_LOCATION_LIVE", "Live Location",
-                "Real-time tracking", Permission.PermissionCategory.LOCATION_TRACKING);
-        createPermission("VIEW_LOCATION_HISTORY", "Location History",
-                "Historical routes", Permission.PermissionCategory.LOCATION_TRACKING);
-        createPermission("EXPORT_LOCATION", "Export Location",
-                "Download location data", Permission.PermissionCategory.LOCATION_TRACKING);
-        createPermission("GEOFENCE_MANAGE", "Geofence Management",
-                "Create/edit boundaries", Permission.PermissionCategory.LOCATION_TRACKING);
-
-        // Alerts & Notifications
-        createPermission("ALERT_READ", "Read Alerts",
-                "View alerts", Permission.PermissionCategory.ALERTS_NOTIFICATIONS);
-        createPermission("ALERT_MANAGE", "Manage Alerts",
-                "Create/modify alert rules", Permission.PermissionCategory.ALERTS_NOTIFICATIONS);
-        createPermission("NOTIFICATION_SEND", "Send Notifications",
-                "Send messages", Permission.PermissionCategory.ALERTS_NOTIFICATIONS);
-
-        // Reports & Analytics
-        createPermission("REPORT_VIEW", "View Reports",
-                "Access reports", Permission.PermissionCategory.REPORTS_ANALYTICS);
-        createPermission("REPORT_GENERATE", "Generate Reports",
-                "Create custom reports", Permission.PermissionCategory.REPORTS_ANALYTICS);
-        createPermission("ANALYTICS_ACCESS", "Analytics Access",
-                "Performance metrics", Permission.PermissionCategory.REPORTS_ANALYTICS);
-
-        // Security & Compliance
-        createPermission("AUDIT_READ", "Read Audit Logs",
-                "View access logs", Permission.PermissionCategory.SECURITY_COMPLIANCE);
-        createPermission("SYSTEM_CONFIG_READ", "System Configuration",
-                "View configuration", Permission.PermissionCategory.SECURITY_COMPLIANCE);
-        createPermission("BILLING_VIEW", "Billing Access",
-                "Access billing information", Permission.PermissionCategory.SECURITY_COMPLIANCE);
-
-        log.info("Created {} permissions", permissionRepository.count());
+    // ---- 3️⃣ Create all permissions (idempotent) ----
+    private Map<String, Permission> createPermissions() {
+        return ALL_PERMISSIONS.stream()
+                .map(code -> permissionRepository.findByCode(code)
+                        .orElseGet(() -> {
+                            Permission permission = Permission.builder()
+                                    .code(code)
+                                    .name(code.replace("_", " ").toLowerCase())
+                                    .description("Permission for " + code.replace("_", " ").toLowerCase())
+                                    .build();
+                            permissionRepository.save(permission);
+                            log.info("✅ Created permission: {}", code);
+                            return permission;
+                        }))
+                .collect(Collectors.toMap(Permission::getCode, p -> p));
     }
 
-    /**
-     * Create essential roles with optimized permissions
-     */
-    private void createRoles() {
-        log.info("Creating essential roles...");
-
-        Role superAdminRole = roleRepository.findByName("superadmin")
-            .orElseGet(() -> {
-                log.info("No superadmin role found, creating new role...");
-                Role role = createRole("superadmin", "Super Administrator with complete system access");
-                role.setPermissions(Set.copyOf(permissionRepository.findAll()));
-                return roleRepository.insertRoleWithConflictHandling(
-                        role.isActive(),
-                        new Timestamp(System.currentTimeMillis()),
-                        role.getCreatedBy(),
-                        role.getDescription(),
-                        role.getModifiedBy(),
-                        role.getName(),
-                        role.getRoleScope().name(),
-                        role.getTenantId(),
-                        new Timestamp(System.currentTimeMillis()),
-                        UUID.randomUUID()
-                ).orElseGet(() -> {
-                    log.info("Role creation conflicted, retrieving existing superadmin role...");
-                    return roleRepository.findByName("superadmin").orElseThrow(() -> 
-                        new IllegalStateException("Failed to create or find superadmin role"));
-                });
-            });
-
-    // TenantAdmin Role - Comprehensive tenant management
-    if (roleRepository.findByName("TenantAdmin").isEmpty()) {
-        Role tenantAdminRole = createRole("TenantAdmin", "Tenant administrator with user and resource management");
-        tenantAdminRole.setPermissions(getPermissionsByCode(
-                "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE", "USER_RESET_PASSWORD",
-                "ROLE_ASSIGN", "ROLE_READ", "ROLE_CREATE", "ROLE_DELETE",
-                "DEVICE_READ", "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE",
-                "VEHICLE_READ", "VEHICLE_CREATE", "VEHICLE_UPDATE", "VEHICLE_ASSIGN_DEVICE", "FLEET_MANAGE",
-                "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "EXPORT_LOCATION", "GEOFENCE_MANAGE",
-                "ALERT_READ", "ALERT_MANAGE", "NOTIFICATION_SEND",
-                "REPORT_VIEW", "REPORT_GENERATE", "ANALYTICS_ACCESS",
-                "AUDIT_READ", "BILLING_VIEW"
-        ));
-        roleRepository.save(tenantAdminRole);
-        log.info("TenantAdmin role created successfully");
-    } else {
-        log.info("TenantAdmin role already exists");
-    }
-    if (roleRepository.findByName("FleetManager").isEmpty()) {
-        Role fleetManagerRole = createRole("FleetManager", "Fleet manager with vehicle and tracking access");
-        fleetManagerRole.setPermissions(getPermissionsByCode(
-                "VEHICLE_READ", "VEHICLE_UPDATE", "VEHICLE_ASSIGN_DEVICE", "FLEET_MANAGE",
-                "DEVICE_READ", "DEVICE_ASSIGN",
-                "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "EXPORT_LOCATION", "GEOFENCE_MANAGE",
-                "ALERT_READ", "ALERT_MANAGE",
-                "REPORT_VIEW", "REPORT_GENERATE", "ANALYTICS_ACCESS"
-        ));
-        roleRepository.save(fleetManagerRole);
-        log.info("FleetManager role created successfully");
-    } else {
-        log.info("FleetManager role already exists");
+    // ---- 4️⃣ Create roles (idempotent) ----
+    private Map<String, Role> createRoles() {
+        return Map.of(
+                "SuperAdmin", createRoleIfMissing("SuperAdmin", "Full system access for all tenants", RoleScope.GLOBAL),
+                "TenantAdmin", createRoleIfMissing("TenantAdmin", "Manages tenant-level configuration and users", RoleScope.TENANT),
+                "FleetManager", createRoleIfMissing("FleetManager", "Manages fleet, devices, and vehicles under a tenant", RoleScope.TENANT),
+                "Operator", createRoleIfMissing("Operator", "Performs operational tasks like tracking, reports, and alerts", RoleScope.TENANT),
+                "Viewer", createRoleIfMissing("Viewer", "View-only access to reports, vehicles, and analytics", RoleScope.TENANT)
+        );
     }
 
-    // TenantAdmin Role - Comprehensive tenant management
-    if (roleRepository.findByName("Dispatcher").isEmpty()) {
-        Role dispatcherRole = createRole("Dispatcher", "Dispatcher with live tracking and communication");
-        dispatcherRole.setPermissions(getPermissionsByCode(
-                "VIEW_LOCATION_LIVE", "ALERT_READ", "NOTIFICATION_SEND", "VEHICLE_READ"
-        ));
-        roleRepository.save(dispatcherRole);
-        log.info("Dispatcher role created successfully");
-    } else {
-        log.info("Dispatcher role already exists");
-    }
-
-    if (roleRepository.findByName("Installer").isEmpty()) {
-        Role installerRole = createRole("Installer", "Device installer with registration permissions");
-        installerRole.setPermissions(getPermissionsByCode(
-                "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE", "VEHICLE_ASSIGN_DEVICE"
-        ));
-        roleRepository.save(installerRole);
-        log.info("Installer role created successfully");
-    } else {
-        log.info("Installer role already exists");
-    }
-
-    // TenantAdmin Role - Comprehensive tenant management
-    if (roleRepository.findByName("Viewer").isEmpty()) {
-        Role viewerRole = createRole("Viewer", "Read-only access to tracking and reports");
-        viewerRole.setPermissions(getPermissionsByCode(
-                "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "VEHICLE_READ", "REPORT_VIEW"
-        ));
-        roleRepository.save(viewerRole);
-        log.info("Viewer role created successfully");
-    } else {
-        log.info("Viewer role already exists");
-    }
-
-        // // FleetManager Role - Fleet operations
-        // Role fleetManagerRole = createRole("FleetManager", "Fleet manager with vehicle and tracking access");
-        // fleetManagerRole.setPermissions(getPermissionsByCode(
-        //         "VEHICLE_READ", "VEHICLE_UPDATE", "VEHICLE_ASSIGN_DEVICE", "FLEET_MANAGE",
-        //         "DEVICE_READ", "DEVICE_ASSIGN",
-        //         "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "EXPORT_LOCATION", "GEOFENCE_MANAGE",
-        //         "ALERT_READ", "ALERT_MANAGE",
-        //         "REPORT_VIEW", "REPORT_GENERATE", "ANALYTICS_ACCESS"
-        // ));
-        // roleRepository.save(fleetManagerRole);
-
-        // Dispatcher Role - Operations focused
-        // Role dispatcherRole = createRole("Dispatcher", "Dispatcher with live tracking and communication");
-        // dispatcherRole.setPermissions(getPermissionsByCode(
-        //         "VIEW_LOCATION_LIVE", "ALERT_READ", "NOTIFICATION_SEND", "VEHICLE_READ"
-        // ));
-        // roleRepository.save(dispatcherRole);
-
-        // Installer Role - Device installation
-        // Role installerRole = createRole("Installer", "Device installer with registration permissions");
-        // installerRole.setPermissions(getPermissionsByCode(
-        //         "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE", "VEHICLE_ASSIGN_DEVICE"
-        // ));
-        // roleRepository.save(installerRole);
-
-        // Viewer Role - Read-only access
-        // Role viewerRole = createRole("Viewer", "Read-only access to tracking and reports");
-        // viewerRole.setPermissions(getPermissionsByCode(
-        //         "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY", "VEHICLE_READ", "REPORT_VIEW"
-        // ));
-        // roleRepository.save(viewerRole);
-
-        log.info("Created {} roles", roleRepository.count());
-    }
-
-    /**
-     * Create SuperAdmin user - FIXED: Added username field
-     */
-private void createSuperAdmin() {
-    log.info("Creating superadmin user...");
-
-    if (userRepository.findByUsernameAndActiveTrue("superadmin").isEmpty()) {
-        Role superAdminRole = roleRepository.findByName("superadmin")
+    private Role createRoleIfMissing(String name, String description, RoleScope scope) {
+        return roleRepository.findByNameIgnoreCase(name)
                 .orElseGet(() -> {
-                    log.info("No superadmin role found, creating new role...");
-                    Role role = createRole("superadmin", "Super Administrator with complete system access");
-                    role.setPermissions(Set.copyOf(permissionRepository.findAll()));
-                    return roleRepository.insertRoleWithConflictHandling(
-                            role.isActive(),
-                            new Timestamp(System.currentTimeMillis()),
-                            role.getCreatedBy(),
-                            role.getDescription(),
-                            role.getModifiedBy(),
-                            role.getName(),
-                            role.getRoleScope().name(),
-                            role.getTenantId(),
-                            new Timestamp(System.currentTimeMillis()),
-                            UUID.randomUUID()
-                    ).orElseGet(() -> {
-                        log.info("Role creation conflicted, retrieving existing superadmin role...");
-                        return roleRepository.findByName("superadmin").orElseThrow(() -> 
-                            new IllegalStateException("Failed to create or find superadmin role"));
-                    });
+                    Role role = Role.builder()
+                            .name(name)
+                            .description(description)
+                            .roleScope(scope)
+                            .build();
+                    roleRepository.save(role);
+                    log.info("✅ Created role: {}", name);
+                    return role;
                 });
-
-        User superAdmin = User.builder()
-                .username("superadmin")
-                .email("superadmin@fleetmanagement.com")
-                .firstName("Super")
-                .lastName("Admin")
-                .password(passwordEncoder.encode("SuperAdmin@123"))
-                .phoneNumber("+1234567890")
-                .tenantId(tenantId)
-                .active(true)
-                .roles(Set.of(superAdminRole))
-                .build();
-
-        userRepository.save(superAdmin);
-        log.info("superadmin user created successfully with username: superadmin");
-    } else {
-        log.info("superadmin user already exists");
-    }
-}
-
-    /**
-     * Helper method to create permission
-     */
-    private void createPermission(String code, String name, String description, Permission.PermissionCategory category) {
-        Permission permission = Permission.builder()
-                .code(code)
-                .name(name)
-                .description(description)
-                .category(category)                
-                .active(true)
-                .requiresScope(!"SUPER_ADMIN".equals(code))
-                .build();
-
-        permissionRepository.save(permission);
     }
 
-    /**
-     * Helper method to create role
-     */
-    private Role createRole(String name, String description) {
-        return Role.builder()
-                .name(name)
-                .description(description)
-                .active(true)
-                .createdBy(createdBy)
-                .modifiedBy(modifiedBy)
-                .tenantId(tenantId)
-                .roleScope(RoleScope.TENANT)                
-                .build();
+    // ---- 5️⃣ Sync permissions per role ----
+    private void syncRolePermissions(Map<String, Role> rolesMap, Map<String, Permission> permissionsMap) {
+        // SuperAdmin → all permissions
+        updateRolePermissions(rolesMap.get("SuperAdmin"), Set.copyOf(permissionsMap.values()));
+
+        // TenantAdmin → system + user + device management
+        updateRolePermissions(rolesMap.get("TenantAdmin"), getPermissions(permissionsMap,
+                "USER_CREATE", "USER_READ", "USER_UPDATE", "USER_DELETE",
+                "DEVICE_READ", "DEVICE_REGISTER", "DEVICE_ASSIGN", "DEVICE_ACTIVATE",
+                "VEHICLE_CREATE", "VEHICLE_UPDATE", "VEHICLE_READ", "ROLE_ASSIGN",
+                "ROLE_READ", "REPORT_VIEW", "BILLING_VIEW", "ALERT_MANAGE"
+        ));
+
+        // FleetManager → operational and reporting
+        updateRolePermissions(rolesMap.get("FleetManager"), getPermissions(permissionsMap,
+                "DEVICE_READ", "VEHICLE_READ", "VIEW_LOCATION_LIVE",
+                "VIEW_LOCATION_HISTORY", "REPORT_VIEW", "REPORT_GENERATE",
+                "EXPORT_LOCATION", "GEOFENCE_MANAGE", "ALERT_READ", "ALERT_MANAGE"
+        ));
+
+        // Operator → limited operational access
+        updateRolePermissions(rolesMap.get("Operator"), getPermissions(permissionsMap,
+                "VIEW_LOCATION_LIVE", "VIEW_LOCATION_HISTORY",
+                "REPORT_VIEW", "ALERT_READ"
+        ));
+
+        // Viewer → read-only
+        updateRolePermissions(rolesMap.get("Viewer"), getPermissions(permissionsMap,
+                "VEHICLE_READ", "DEVICE_READ", "REPORT_VIEW", "ANALYTICS_ACCESS"
+        ));
     }
 
-    /**
-     * Helper method to get permissions by code
-     */
-    private Set<Permission> getPermissionsByCode(String... codes) {
-        return Set.copyOf(permissionRepository.findByCodeIn(Set.of(codes)));
+    private void updateRolePermissions(Role role, Set<Permission> expected) {
+        if (role == null) return;
+        if (!role.getPermissions().equals(expected)) {
+            role.setPermissions(expected);
+            roleRepository.save(role);
+            log.info("🔄 Synced {} with {} permissions", role.getName(), expected.size());
+        } else {
+            log.info("{} already up-to-date ({} permissions)", role.getName(), expected.size());
+        }
+    }
+
+    private Set<Permission> getPermissions(Map<String, Permission> map, String... codes) {
+        return Set.of(codes).stream()
+                .map(map::get)
+                .filter(p -> p != null)
+                .collect(Collectors.toSet());
+    }
+
+    // ---- 6️⃣ Create default SuperAdmin user ----
+    private void createSuperAdminUser(Role superAdminRole) {
+        if (superAdminRole == null) return;
+
+        if (userRepository.findByEmailIgnoreCase("superadmin@system.com").isEmpty()) {
+            User user = User.builder()
+                    .email("superadmin@system.com")
+                    .username("superadmin")
+                    .password(passwordEncoder.encode("admin123"))
+                    .active(true)
+                    .roles(Set.of(superAdminRole))
+                    .build();
+            userRepository.save(user);
+            log.info("✅ Created default SuperAdmin user: superadmin@system.com");
+        }
     }
 }

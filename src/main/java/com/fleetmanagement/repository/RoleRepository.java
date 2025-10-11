@@ -27,6 +27,9 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
      */
     Optional<Role> findByName(String name);
 
+    @Query("SELECT r FROM Role r WHERE LOWER(r.name) = LOWER(:name)")
+    Optional<Role> findByNameIgnoreCase(@Param("name") String name);
+
     /**
      * Find active roles by tenant with pagination
      */
@@ -46,7 +49,8 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
      * Check if role exists by name for tenant (excluding current role)
      */
     @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM Role r WHERE r.name = :name AND r.tenantId = :tenantId AND r.id != :excludeId")
-    boolean existsByNameAndTenantIdExcluding(@Param("name") String name, @Param("tenantId") UUID tenantId, @Param("excludeId") UUID excludeId);
+    boolean existsByNameAndTenantIdExcluding(@Param("name") String name, @Param("tenantId") UUID tenantId,
+            @Param("excludeId") UUID excludeId);
 
     /**
      * Find roles with specific permission
@@ -90,12 +94,14 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     /**
      * Find roles by tenant ID and scope type with active status
      */
-    Page<Role> findByTenantIdAndRoleScopeAndActiveTrue(@Param("tenantId") UUID tenantId, @Param("role_scope")RoleScope roleScope, Pageable pageable);
+    Page<Role> findByTenantIdAndRoleScopeAndActiveTrue(@Param("tenantId") UUID tenantId,
+            @Param("role_scope") RoleScope roleScope, Pageable pageable);
 
-
-    @Query(value = "INSERT INTO roles (active, created_at, created_by, description, modified_by, name, role_scope, tenant_id, updated_at, id) " +
-                   "VALUES (:active, :createdAt, :createdBy, :description, :modifiedBy, :name, :roleScope, :tenantId, :updatedAt, :id) " +
-                   "ON CONFLICT (name) DO NOTHING RETURNING *", nativeQuery = true)
+    @Query(value = "INSERT INTO roles (active, created_at, created_by, description, modified_by, name, role_scope, tenant_id, updated_at, id) "
+            +
+            "VALUES (:active, :createdAt, :createdBy, :description, :modifiedBy, :name, :roleScope, :tenantId, :updatedAt, :id) "
+            +
+            "ON CONFLICT (name) DO NOTHING RETURNING *", nativeQuery = true)
     Optional<Role> insertRoleWithConflictHandling(
             @Param("active") boolean active,
             @Param("createdAt") Timestamp createdAt,
@@ -106,6 +112,5 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
             @Param("roleScope") String roleScope,
             @Param("tenantId") UUID tenantId,
             @Param("updatedAt") Timestamp updatedAt,
-            @Param("id") UUID id
-    );
+            @Param("id") UUID id);
 }
