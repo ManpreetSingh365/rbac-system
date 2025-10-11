@@ -48,6 +48,7 @@ import java.util.UUID;
 // @EntityListeners(AuditingEntityListener.class)
 public class Permission {
 
+
     // =======================
     // Primary Key
     // =======================

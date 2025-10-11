@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +25,12 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
      * Find permission by code
      */
     Optional<Permission> findByCode(String code);
+
+    // Find all permissions by a single category
+    List<Permission> findByCategory(Permission.PermissionCategory category);
+
+    // Optional: Find by multiple categories (if needed)
+    List<Permission> findByCategoryIn(Collection<Permission.PermissionCategory> categories);
 
     /**
      * Find active permissions with pagination
