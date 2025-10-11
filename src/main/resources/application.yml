@@ -1,13 +1,39 @@
+# RBAC Configuration
+app:
+  data-init:
+    enabled: true # Enable/disable data initialization
+
+  jwt:
+    secret: ${JWT_SECRET:1f8b08c5a13d47e5b2c1d0f3c7e8a9b0c2d4e6f8a1b3c5d7e9f1023456789abc}
+    expiration: 3600000
+  name: Fleet Management RBAC System
+  version: 1.0.0
+
+  # Default tenant configuration
+  default-tenant-id: "b0accb3b-37e2-4a80-ba00-583eefa8b664"
+
+  # SuperAdmin Configuration
+  superadmin:
+    username: "superadmin"
+    password: "SuperAdmin@123" # Change this in production!
+    email: "superadmin@fleetmanagement.com"
+
+# Spring Boot Configuration
 spring:
+  application:
+    name: "Fleet Management RBAC System"
+
+  # Database Configuration
   datasource:
     url: jdbc:postgresql://db:5432/fleet_management
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:123456}
     driver-class-name: org.postgresql.Driver
 
+  # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate # Use Flyway for schema management
     show-sql: false
     properties:
       hibernate:
@@ -27,23 +53,20 @@ server:
   http2:
     enabled: true
 
-app:
-  jwt:
-    secret: ${JWT_SECRET:1f8b08c5a13d47e5b2c1d0f3c7e8a9b0c2d4e6f8a1b3c5d7e9f1023456789abc}
-    expiration: 3600000
-  name: Fleet Management RBAC System
-  version: 1.0.0
 
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.fleetmanagement.bootstrap: INFO
     com.fleetmanagement: DEBUG
-    org.springframework.boot.autoconfigure: WARN
-    org.springframework.security: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    org.springframework.security: WARN
+    hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %highlight(%-5level) %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management Endpoints
 management:
   endpoints:
     web:

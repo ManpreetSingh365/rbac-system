@@ -1,8 +1,8 @@
-
 package com.fleetmanagement.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -23,10 +23,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -92,7 +92,7 @@ public class Permission {
     // =======================
     // Auditing Fields
     // =======================
-    @CreationTimestamp
+    @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
@@ -117,17 +117,18 @@ public class Permission {
     @PreUpdate
     private void normalize() {
         if (code != null)
-            code = code.trim().toLowerCase();
+            code = code.trim().toUpperCase();
         if (name != null)
-            name = name.trim().toLowerCase();
+            name = name.trim();
     }
 
     // =======================
-    // Enum Permission Category
+    // FIXED Enum Permission Category
     // =======================
     public enum PermissionCategory {
         SYSTEM_ADMINISTRATION,
         USER_MANAGEMENT,
+        ROLE_MANAGEMENT, 
         DEVICE_MANAGEMENT,
         VEHICLE_MANAGEMENT,
         LOCATION_TRACKING,
